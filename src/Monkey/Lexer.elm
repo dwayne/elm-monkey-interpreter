@@ -1,27 +1,181 @@
 module Monkey.Lexer exposing
-  ( identifier
+  ( identifier, number, boolean, string
+
+  , rElse, rFn, rIf, rLet, rReturn
+
+  , asterisk, bang, bangEqual, colon, doubleEqual, equal, greaterThan
+  , hyphen, lessThan, plus, semicolon, slash
+
+  , spaces
   )
 
 
-import Parser as P exposing (Parser)
+import Parser as P exposing ((|=), (|.), Parser)
 import Set exposing (Set)
 
 
 identifier : Parser String
 identifier =
-  P.variable
-    { start = isLetter
-    , inner = isLetter
-    , reserved = reserved
-    }
+  lexeme <|
+    P.variable
+      { start = isLetter
+      , inner = isLetter
+      , reserved = reserved
+      }
+
+
+number : Parser Int
+number =
+  lexeme P.int
+
+
+boolean : Parser Bool
+boolean =
+  lexeme <|
+    P.oneOf
+      [ P.succeed True
+          |. P.keyword "true"
+      , P.succeed False
+          |. P.keyword "false"
+      ]
+
+
+string : Parser String
+string =
+  let
+    chars =
+      P.getChompedString <|
+        P.chompWhile ((/=) '"')
+  in
+  lexeme <|
+    P.succeed identity
+      |. P.chompIf ((==) '"')
+      |= chars
+      |. P.chompIf ((==) '"')
+
+
+-- RESERVED NAMES
+
+
+rElse : Parser ()
+rElse =
+  keyword "else"
+
+
+rFn : Parser ()
+rFn =
+  keyword "fn"
+
+
+rIf : Parser ()
+rIf =
+  keyword "if"
+
+
+rLet : Parser ()
+rLet =
+  keyword "let"
+
+
+rReturn : Parser ()
+rReturn =
+  keyword "return"
+
+
+-- SYMBOLS
+
+
+asterisk : Parser ()
+asterisk =
+  symbol "*"
+
+
+bang : Parser ()
+bang =
+  symbol "!"
+
+
+bangEqual : Parser ()
+bangEqual =
+  symbol "!="
+
+
+colon : Parser ()
+colon =
+  symbol ":"
+
+
+doubleEqual : Parser ()
+doubleEqual =
+  symbol "=="
+
+
+equal : Parser ()
+equal =
+  symbol "="
+
+
+greaterThan : Parser ()
+greaterThan =
+  symbol ">"
+
+
+hyphen : Parser ()
+hyphen =
+  symbol "-"
+
+
+lessThan : Parser ()
+lessThan =
+  symbol "<"
+
+
+plus : Parser ()
+plus =
+  symbol "+"
+
+
+semicolon : Parser ()
+semicolon =
+  symbol ";"
+
+
+slash : Parser ()
+slash =
+  symbol "/"
+
+
+-- MISC
+
+
+spaces : Parser ()
+spaces =
+  P.spaces
 
 
 -- HELPERS
 
 
+keyword : String -> Parser ()
+keyword =
+  lexeme << P.keyword
+
+
+symbol : String -> Parser ()
+symbol =
+  lexeme << P.symbol
+
+
+lexeme : Parser a -> Parser a
+lexeme p =
+  P.succeed identity
+    |= p
+    |. spaces
+
+
 isLetter : Char -> Bool
 isLetter c =
-  Char.isLower c || Char.isUpper c || c == '_'
+  Char.isAlpha c || c == '_'
 
 
 reserved : Set String
