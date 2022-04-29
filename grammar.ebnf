@@ -1,0 +1,48 @@
+/* A context-free grammar for the monkey programming language.
+ *
+ * Go to https://www.bottlecaps.de/rr/ui to view a syntax diagram of the
+ * grammar.
+ */
+
+Program ::= Stmt*
+
+Stmt     ::= Let | Return | ExprStmt
+Let      ::= 'let' Id '=' Expr ';'
+Return   ::= 'return' Expr ';'
+ExprStmt ::= Expr ';'?
+
+Expr       ::= Equality
+Equality   ::= Comparison ( '==' | '!=' ) Comparison | Comparison
+Comparison ::= Term ( '<' | '>' ) Term | Term
+Term       ::= Term ( '+' | '-' ) Factor | Factor
+Factor     ::= Factor ( '*' | '/' ) Unary | Unary
+Unary      ::= ( '!' | '-' ) Unary | Operator
+Operator   ::= Operator ( Call | Index ) | Primary
+Primary    ::= Identifier
+             | Number
+             | Boolean
+             | String
+             | Array
+             | Hash
+             | If
+             | Function
+             | '(' Expr ')'
+
+Identifier ::= [a-zA-Z_]+
+Number     ::= [0-9]+
+Boolean    ::= 'true' | 'false'
+String     ::= '"' [^"]* '"'
+Array      ::= '[' ']' | '[' ExprList ']'
+Hash       ::= '{' '}' | '{' KeyValueList '}'
+If         ::= 'if' '(' Expr ')' Block ( 'else' Block )?
+Function   ::= 'fn' Params Block
+
+Call         ::= '(' ')' | '(' ExprList ')'
+Index        ::= '[' Expr ']'
+ExprList     ::= ExprList ',' Expr | Expr
+KeyValueList ::= KeyValueList ',' KeyValue | KeyValue
+KeyValue     ::= Expr ':' Expr
+Block        ::= '{' Stmts '}'
+Stmts        ::= Stmts Stmt | Stmt
+Params       ::= '(' ')' | '(' ParamList ')'
+ParamList    ::= ParamList ',' Id | Id
