@@ -8,9 +8,12 @@ module Monkey.Parser exposing
 
 -- TODO:
 --
--- 1. Implement optional.
--- 2. Implement many.
--- 3. Add tests.
+-- 1. If
+-- 2. Function
+-- 3. Group
+-- 4. Equality
+-- 5. Array
+-- 6. Hash
 
 
 import Monkey.Lexer exposing (..)
@@ -116,6 +119,7 @@ primary =
     [ var
     , num
     , bool
+    , str
     ]
 
 
@@ -132,3 +136,30 @@ num =
 bool : Parser Expr
 bool =
   P.map Bool boolean
+
+
+str : Parser Expr
+str =
+  P.map String string
+
+
+many : Parser a -> Parser (List a)
+many p =
+  let
+    helper rev =
+      P.oneOf
+        [ P.succeed (\x -> P.Loop (x :: rev))
+            |= p
+        , P.succeed ()
+            |> P.map (\_ -> P.Done (List.reverse rev))
+        ]
+  in
+  P.loop [] helper
+
+
+optional : Parser a -> Parser (Maybe a)
+optional p =
+  P.oneOf
+    [ P.map Just p
+    , P.succeed Nothing
+    ]
