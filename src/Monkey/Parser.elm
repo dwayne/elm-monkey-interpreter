@@ -8,7 +8,6 @@ module Monkey.Parser exposing
 
 -- TODO:
 --
--- 3. Group
 -- 4. Equality
 -- 5. Array
 -- 6. Hash
@@ -120,6 +119,7 @@ primary =
     , str
     , ifExpr
     , function
+    , group
     ]
 
 
@@ -164,6 +164,14 @@ function =
     |. rFn
     |= params
     |= block
+
+
+group : Parser Expr
+group =
+  P.succeed identity
+    |. leftParen
+    |= P.lazy (\_ -> expr)
+    |. rightParen
 
 
 block : Parser (List Stmt)

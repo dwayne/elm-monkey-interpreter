@@ -97,6 +97,7 @@ expressionStatementSuite =
     , stringSuite
     , ifSuite
     , functionSuite
+    , groupSuite
     ]
 
 
@@ -255,5 +256,32 @@ functionSuite =
                 ]
           in
           parse "fn (x, y) { x; y }"
+            |> Expect.equal (Ok expected)
+    ]
+
+
+groupSuite : Test
+groupSuite =
+  describe "group"
+    [ test "example 1" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Var "x")
+                ]
+          in
+          parse "(x)"
+            |> Expect.equal (Ok expected)
+
+    , test "example 2" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Num 1)
+                ]
+          in
+          parse "(((1)))"
             |> Expect.equal (Ok expected)
     ]
