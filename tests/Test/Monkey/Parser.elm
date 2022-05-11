@@ -257,6 +257,17 @@ functionSuite =
           in
           parse "fn (x, y) { x; y }"
             |> Expect.equal (Ok expected)
+
+    , test "example 4" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Function ["x"] [ Return (Var "x") ])
+                ]
+          in
+          parse "fn (x) { return x; }"
+            |> Expect.equal (Ok expected)
     ]
 
 
