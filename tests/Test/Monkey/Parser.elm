@@ -96,6 +96,7 @@ expressionStatementSuite =
     , booleanSuite
     , stringSuite
     , ifSuite
+    , functionSuite
     ]
 
 
@@ -211,5 +212,48 @@ ifSuite =
                 ]
           in
           parse "if (x) { 1 } else { 2; }"
+            |> Expect.equal (Ok expected)
+    ]
+
+
+functionSuite : Test
+functionSuite =
+  describe "function"
+    [ test "example 1" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Function [] [])
+                ]
+          in
+          parse "fn () {}"
+            |> Expect.equal (Ok expected)
+
+    , test "example 2" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Function ["x"] [ ExprStmt (Var "x") ])
+                ]
+          in
+          parse "fn (x) { x }"
+            |> Expect.equal (Ok expected)
+
+    , test "example 3" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt
+                    ( Function ["x", "y"]
+                        [ ExprStmt (Var "x")
+                        , ExprStmt (Var "y")
+                        ]
+                    )
+                ]
+          in
+          parse "fn (x, y) { x; y }"
             |> Expect.equal (Ok expected)
     ]

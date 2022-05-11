@@ -8,7 +8,6 @@ module Monkey.Parser exposing
 
 -- TODO:
 --
--- 2. Function
 -- 3. Group
 -- 4. Equality
 -- 5. Array
@@ -39,7 +38,7 @@ type Expr
   | Call Expr (List Expr)
   | Index Expr Expr
   | If Expr Block (Maybe Block)
-  | Fn (List Id) Block
+  | Function (List Id) Block
 
 type UnaryOp
   = Not
@@ -120,6 +119,7 @@ primary =
     , bool
     , str
     , ifExpr
+    , function
     ]
 
 
@@ -158,12 +158,25 @@ ifExpr =
         )
 
 
+function : Parser Expr
+function =
+  P.succeed Function
+    |. rFn
+    |= params
+    |= block
+
+
 block : Parser (List Stmt)
 block =
   P.succeed identity
     |. leftBracket
     |= many (P.lazy (\_ -> stmt))
     |. rightBracket
+
+
+params : Parser (List Id)
+params =
+  parens identifier
 
 
 many : Parser a -> Parser (List a)

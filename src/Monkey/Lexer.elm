@@ -7,7 +7,7 @@ module Monkey.Lexer exposing
   , hyphen, leftBracket, leftParen, lessThan, plus, rightBracket, rightParen
   , semicolon, slash
 
-  , spaces
+  , parens, spaces
   )
 
 
@@ -167,6 +167,19 @@ slash =
 
 
 -- MISC
+
+
+parens : Parser a -> Parser (List a)
+parens item =
+  lexeme <|
+    P.sequence
+      { start = "("
+      , separator = ","
+      , end = ")"
+      , spaces = spaces
+      , item = item
+      , trailing = P.Forbidden
+      }
 
 
 spaces : Parser ()
