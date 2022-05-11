@@ -95,6 +95,7 @@ expressionStatementSuite =
     , numberSuite
     , booleanSuite
     , stringSuite
+    , ifSuite
     ]
 
 
@@ -172,5 +173,43 @@ stringSuite =
             """
             "Hello, world!"
             """
+            |> Expect.equal (Ok expected)
+    ]
+
+
+ifSuite : Test
+ifSuite =
+  describe "if"
+    [ test "example 1" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (If (Var "x") [] Nothing)
+                ]
+          in
+          parse "if (x) {}"
+            |> Expect.equal (Ok expected)
+
+    , test "example 2" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (If (Var "x") [] (Just []))
+                ]
+          in
+          parse "if (x) {} else {}"
+            |> Expect.equal (Ok expected)
+
+    , test "example 3" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (If (Var "x") [ ExprStmt (Num 1) ] (Just [ ExprStmt (Num 2) ]))
+                ]
+          in
+          parse "if (x) { 1 } else { 2; }"
             |> Expect.equal (Ok expected)
     ]

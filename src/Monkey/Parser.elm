@@ -8,7 +8,6 @@ module Monkey.Parser exposing
 
 -- TODO:
 --
--- 1. If
 -- 2. Function
 -- 3. Group
 -- 4. Equality
@@ -120,6 +119,7 @@ primary =
     , num
     , bool
     , str
+    , ifExpr
     ]
 
 
@@ -141,6 +141,29 @@ bool =
 str : Parser Expr
 str =
   P.map String string
+
+
+ifExpr : Parser Expr
+ifExpr =
+  P.succeed If
+    |. rIf
+    |. leftParen
+    |= P.lazy (\_ -> expr)
+    |. rightParen
+    |= block
+    |= optional
+        ( P.succeed identity
+            |. rElse
+            |= block
+        )
+
+
+block : Parser (List Stmt)
+block =
+  P.succeed identity
+    |. leftBracket
+    |= many (P.lazy (\_ -> stmt))
+    |. rightBracket
 
 
 many : Parser a -> Parser (List a)

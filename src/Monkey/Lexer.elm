@@ -4,7 +4,8 @@ module Monkey.Lexer exposing
   , rElse, rFn, rIf, rLet, rReturn
 
   , asterisk, bang, bangEqual, colon, doubleEqual, equal, greaterThan
-  , hyphen, lessThan, plus, semicolon, slash
+  , hyphen, leftBracket, leftParen, lessThan, plus, rightBracket, rightParen
+  , semicolon, slash
 
   , spaces
   )
@@ -125,6 +126,16 @@ hyphen =
   symbol "-"
 
 
+leftBracket : Parser ()
+leftBracket =
+  symbol "{"
+
+
+leftParen : Parser ()
+leftParen =
+  symbol "("
+
+
 lessThan : Parser ()
 lessThan =
   symbol "<"
@@ -133,6 +144,16 @@ lessThan =
 plus : Parser ()
 plus =
   symbol "+"
+
+
+rightBracket : Parser ()
+rightBracket =
+  symbol "}"
+
+
+rightParen : Parser ()
+rightParen =
+  symbol ")"
 
 
 semicolon : Parser ()
