@@ -6,13 +6,6 @@ module Monkey.Parser exposing
   )
 
 
--- TODO:
---
--- 4. Equality
--- 5. Array
--- 6. Hash
-
-
 import Monkey.Lexer exposing (..)
 import Parser as P exposing ((|=), (|.), Parser)
 
@@ -107,7 +100,34 @@ exprStmt =
 
 
 expr : Parser Expr
-expr = primary
+expr = equality
+
+
+equality : Parser Expr
+equality =
+  let
+    buildExpr left maybeRest =
+      case maybeRest of
+        Just (op, right) ->
+          Infix op left right
+
+        Nothing ->
+          left
+  in
+  P.succeed buildExpr
+    |= comparison
+    |= optional
+        ( P.succeed Tuple.pair
+            |= P.oneOf
+                [ P.map (always Equal) doubleEqual
+                , P.map (always NotEqual) bangEqual
+                ]
+            |= comparison
+        )
+
+
+comparison : Parser Expr
+comparison = primary
 
 
 primary : Parser Expr

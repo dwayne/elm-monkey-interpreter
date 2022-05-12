@@ -98,6 +98,7 @@ expressionStatementSuite =
     , ifSuite
     , functionSuite
     , groupSuite
+    , operationSuite
     ]
 
 
@@ -294,5 +295,32 @@ groupSuite =
                 ]
           in
           parse "(((1)))"
+            |> Expect.equal (Ok expected)
+    ]
+
+
+operationSuite : Test
+operationSuite =
+  describe "operation"
+    [ test "example 1" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Infix Equal (Num 1) (Num 1))
+                ]
+          in
+          parse "1 == 1"
+            |> Expect.equal (Ok expected)
+
+    , test "example 2" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Infix NotEqual (Num 1) (Num 2))
+                ]
+          in
+          parse "1 != 2"
             |> Expect.equal (Ok expected)
     ]
