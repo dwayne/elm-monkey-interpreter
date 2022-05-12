@@ -323,4 +323,41 @@ operationSuite =
           in
           parse "1 != 2"
             |> Expect.equal (Ok expected)
+
+    , test "example 3" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Infix LessThan (Num 1) (Num 2))
+                ]
+          in
+          parse "1 < 2"
+            |> Expect.equal (Ok expected)
+
+    , test "example 4" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Infix GreaterThan (Num 2) (Num 1))
+                ]
+          in
+          parse "2 > 1"
+            |> Expect.equal (Ok expected)
+
+    , test "example 5" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Infix
+                      Equal
+                      (Infix LessThan (Num 1) (Num 2))
+                      (Infix GreaterThan (Num 2) (Num 1))
+                ]
+          in
+          parse "1 < 2 == 2 > 1"
+            |> Expect.equal (Ok expected)
     ]

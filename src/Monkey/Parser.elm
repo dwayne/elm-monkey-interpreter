@@ -127,7 +127,30 @@ equality =
 
 
 comparison : Parser Expr
-comparison = primary
+comparison =
+  let
+    buildExpr left maybeRest =
+      case maybeRest of
+        Just (op, right) ->
+          Infix op left right
+
+        Nothing ->
+          left
+  in
+  P.succeed buildExpr
+    |= term
+    |= optional
+        ( P.succeed Tuple.pair
+            |= P.oneOf
+                [ P.map (always LessThan) lessThan
+                , P.map (always GreaterThan) greaterThan
+                ]
+            |= term
+        )
+
+
+term : Parser Expr
+term = primary
 
 
 primary : Parser Expr
