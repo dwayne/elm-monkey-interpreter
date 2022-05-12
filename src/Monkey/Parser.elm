@@ -177,8 +177,40 @@ unary =
     ]
 
 
+-- Operator ::= Operator ( Call | Index ) | Primary
+--
+-- This production generates the following:
+--
+-- x, x(...), x[...], x(...)(...), x(...)[...], x[...](...), x[...][...], etc.
+--
+-- N.B. x(1)(2)(3) means (((x(1))(2))(3).
+--
+-- Let's remove the left-recursion to get:
+--
+-- Operator ::= Primary ( Call | Index )*
+--
+-- Then, we need to do a little extra processing to get the meaning we want.
 operator : Parser Expr
-operator = primary
+operator =
+  let
+    callOrIndex =
+      P.oneOf
+        [ P.map (flip Call) call
+        , P.map (flip Index) index
+        ]
+
+    call =
+      parens <| P.lazy (\_ -> expr)
+
+    index =
+      P.succeed identity
+        |. leftSquareBracket
+        |= P.lazy (\_ -> expr)
+        |. rightSquareBracket
+  in
+  P.succeed (List.foldl (<|))
+    |= primary
+    |= many callOrIndex
 
 
 primary : Parser Expr
@@ -313,3 +345,8 @@ binaryLeftAssoc p op =
             |= op
             |= p
         )
+
+
+flip : (a -> b -> c) -> b -> a -> c
+flip f b a =
+  f a b

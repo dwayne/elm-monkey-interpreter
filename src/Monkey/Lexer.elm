@@ -4,8 +4,8 @@ module Monkey.Lexer exposing
   , rElse, rFn, rIf, rLet, rReturn
 
   , asterisk, bang, bangEqual, colon, doubleEqual, equal, greaterThan
-  , hyphen, leftBracket, leftParen, lessThan, plus, rightBracket, rightParen
-  , semicolon, slash
+  , hyphen, leftBracket, leftParen, leftSquareBracket, lessThan, plus
+  , rightBracket, rightParen, rightSquareBracket, semicolon, slash
 
   , parens, spaces
   )
@@ -136,6 +136,11 @@ leftParen =
   symbol "("
 
 
+leftSquareBracket : Parser ()
+leftSquareBracket =
+  symbol "["
+
+
 lessThan : Parser ()
 lessThan =
   symbol "<"
@@ -154,6 +159,11 @@ rightBracket =
 rightParen : Parser ()
 rightParen =
   symbol ")"
+
+
+rightSquareBracket : Parser ()
+rightSquareBracket =
+  symbol "]"
 
 
 semicolon : Parser ()

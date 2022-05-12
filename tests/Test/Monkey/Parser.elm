@@ -486,4 +486,116 @@ operationSuite =
           in
           parse "!!!x"
             |> Expect.equal (Ok expected)
+
+    , test "example 15" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Call (Var "f") [])
+                ]
+          in
+          parse "f()"
+            |> Expect.equal (Ok expected)
+
+    , test "example 16" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Call (Var "f") [Num 1])
+                ]
+          in
+          parse "f(1)"
+            |> Expect.equal (Ok expected)
+
+    , test "example 17" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Call (Var "f") [Num 1, Num 2])
+                ]
+          in
+          parse "f(1, 2)"
+            |> Expect.equal (Ok expected)
+
+    , test "example 18" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Call
+                      (Call
+                        (Call (Var "f") [Num 1])
+                        [Num 2]
+                      )
+                      [Num 3]
+                ]
+          in
+          parse "f(1)(2)(3)"
+            |> Expect.equal (Ok expected)
+
+    , test "example 19" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Index (Var "f") (Num 1))
+                ]
+          in
+          parse "f[1]"
+            |> Expect.equal (Ok expected)
+
+    , test "example 20" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Index
+                      (Index
+                        (Index (Var "f") (Num 0))
+                        (Num 1)
+                      )
+                      (Num 2)
+                ]
+          in
+          parse "f[0][1][2]"
+            |> Expect.equal (Ok expected)
+
+    , test "example 21" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Index
+                      (Call
+                        (Index (Call (Var "e") [Num 0]) (Num 1))
+                        [Num 2]
+                      )
+                      (Num 3)
+                ]
+          in
+          parse "e(0)[1](2)[3]"
+            |> Expect.equal (Ok expected)
+
+    , test "example 22" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Call
+                      (Index
+                        (Call (Index (Var "e") (Num 0)) [Num 1])
+                        (Num 2)
+                      )
+                      [Num 3]
+                ]
+          in
+          parse "e[0](1)[2](3)"
+            |> Expect.equal (Ok expected)
     ]
