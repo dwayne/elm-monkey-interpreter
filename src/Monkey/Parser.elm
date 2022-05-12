@@ -165,7 +165,20 @@ factor =
 
 
 unary : Parser Expr
-unary = primary
+unary =
+  P.oneOf
+    [ P.succeed (<|)
+        |= P.oneOf
+            [ P.map (always (Prefix Not)) bang
+            , P.map (always (Prefix Negate)) hyphen
+            ]
+        |= P.lazy (\_ -> unary)
+    , operator
+    ]
+
+
+operator : Parser Expr
+operator = primary
 
 
 primary : Parser Expr

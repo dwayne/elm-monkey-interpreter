@@ -452,4 +452,38 @@ operationSuite =
           in
           parse "a * b / c * d / e"
             |> Expect.equal (Ok expected)
+
+    , test "example 12" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Prefix Not (Var "x"))
+                ]
+          in
+          parse "!x"
+            |> Expect.equal (Ok expected)
+
+    , test "example 13" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Prefix Negate (Var "x"))
+                ]
+          in
+          parse "-x"
+            |> Expect.equal (Ok expected)
+
+    , test "example 14" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Prefix Not (Prefix Not (Prefix Not (Var "x")))
+                ]
+          in
+          parse "!!!x"
+            |> Expect.equal (Ok expected)
     ]
