@@ -148,25 +148,11 @@ comparison =
 -- i.e. associativity to the right. We need to account for that.
 term : Parser Expr
 term =
-  let
-    buildLeftAssocExpr x list =
-      case list of
-        [] ->
-          x
-
-        (op, y) :: rest ->
-          buildLeftAssocExpr (op x y) rest
-  in
-  P.succeed buildLeftAssocExpr
-    |= factor
-    |= many
-        ( P.succeed Tuple.pair
-            |= P.oneOf
-                [ P.map (always (Infix Add)) plus
-                , P.map (always (Infix Sub)) hyphen
-                ]
-            |= factor
-        )
+  binaryLeftAssoc factor <|
+    P.oneOf
+        [ P.map (always (Infix Add)) plus
+        , P.map (always (Infix Sub)) hyphen
+        ]
 
 
 factor : Parser Expr
@@ -286,6 +272,26 @@ binary p op =
   P.succeed buildExpr
     |= p
     |= optional
+        ( P.succeed Tuple.pair
+            |= op
+            |= p
+        )
+
+
+binaryLeftAssoc : Parser a -> Parser (a -> a -> a) -> Parser a
+binaryLeftAssoc p op =
+  let
+    buildLeftAssocExpr x list =
+      case list of
+        [] ->
+          x
+
+        (f, y) :: rest ->
+          buildLeftAssocExpr (f x y) rest
+  in
+  P.succeed buildLeftAssocExpr
+    |= p
+    |= many
         ( P.succeed Tuple.pair
             |= op
             |= p
