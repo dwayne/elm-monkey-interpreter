@@ -107,8 +107,8 @@ equality : Parser Expr
 equality =
   binary comparison <|
     P.oneOf
-        [ P.map (always Equal) doubleEqual
-        , P.map (always NotEqual) bangEqual
+        [ P.map (always (Infix Equal)) doubleEqual
+        , P.map (always (Infix NotEqual)) bangEqual
         ]
 
 
@@ -116,29 +116,9 @@ comparison : Parser Expr
 comparison =
   binary term <|
     P.oneOf
-        [ P.map (always LessThan) lessThan
-        , P.map (always GreaterThan) greaterThan
+        [ P.map (always (Infix LessThan)) lessThan
+        , P.map (always (Infix GreaterThan)) greaterThan
         ]
-
-
-binary : Parser Expr -> Parser BinOp -> Parser Expr
-binary exprP binOpP =
-  let
-    buildExpr left maybeRest =
-      case maybeRest of
-        Just (binOp, right) ->
-          Infix binOp left right
-
-        Nothing ->
-          left
-  in
-  P.succeed buildExpr
-    |= exprP
-    |= optional
-        ( P.succeed Tuple.pair
-            |= binOpP
-            |= exprP
-        )
 
 
 -- Term ::= Term ( '+' | '-' ) Factor | Factor
@@ -290,3 +270,23 @@ optional p =
     [ P.map Just p
     , P.succeed Nothing
     ]
+
+
+binary : Parser a -> Parser (a -> a -> a) -> Parser a
+binary p op =
+  let
+    buildExpr left maybeRest =
+      case maybeRest of
+        Just (f, right) ->
+          f left right
+
+        Nothing ->
+          left
+  in
+  P.succeed buildExpr
+    |= p
+    |= optional
+        ( P.succeed Tuple.pair
+            |= op
+            |= p
+        )
