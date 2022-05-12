@@ -156,7 +156,16 @@ term =
 
 
 factor : Parser Expr
-factor = primary
+factor =
+  binaryLeftAssoc unary <|
+    P.oneOf
+        [ P.map (always (Infix Mul)) asterisk
+        , P.map (always (Infix Div)) slash
+        ]
+
+
+unary : Parser Expr
+unary = primary
 
 
 primary : Parser Expr

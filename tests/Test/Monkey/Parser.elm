@@ -406,4 +406,50 @@ operationSuite =
           in
           parse "a + b - c + d - e"
             |> Expect.equal (Ok expected)
+
+    , test "example 9" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Infix Mul (Var "x") (Var "y"))
+                ]
+          in
+          parse "x * y"
+            |> Expect.equal (Ok expected)
+
+    , test "example 10" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Infix Div (Var "x") (Var "y"))
+                ]
+          in
+          parse "x / y"
+            |> Expect.equal (Ok expected)
+
+    , test "example 11" <|
+        \_ ->
+          let
+            -- (((a * b) / c) * d) / e
+            expected =
+              Program
+                [ ExprStmt <|
+                    Infix
+                      Div
+                      (Infix
+                        Mul
+                        (Infix
+                          Div
+                          (Infix Mul (Var "a") (Var "b"))
+                          (Var "c")
+                        )
+                        (Var "d")
+                      )
+                      (Var "e")
+                ]
+          in
+          parse "a * b / c * d / e"
+            |> Expect.equal (Ok expected)
     ]
