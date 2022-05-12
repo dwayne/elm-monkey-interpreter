@@ -281,13 +281,8 @@ binary p op =
 binaryLeftAssoc : Parser a -> Parser (a -> a -> a) -> Parser a
 binaryLeftAssoc p op =
   let
-    buildLeftAssocExpr x list =
-      case list of
-        [] ->
-          x
-
-        (f, y) :: rest ->
-          buildLeftAssocExpr (f x y) rest
+    buildLeftAssocExpr =
+      List.foldl (\(f, y) x -> f x y)
   in
   P.succeed buildLeftAssocExpr
     |= p
