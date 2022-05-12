@@ -360,4 +360,50 @@ operationSuite =
           in
           parse "1 < 2 == 2 > 1"
             |> Expect.equal (Ok expected)
+
+    , test "example 6" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Infix Add (Var "x") (Var "y"))
+                ]
+          in
+          parse "x + y"
+            |> Expect.equal (Ok expected)
+
+    , test "example 7" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Infix Sub (Var "x") (Var "y"))
+                ]
+          in
+          parse "x - y"
+            |> Expect.equal (Ok expected)
+
+    , test "example 8" <|
+        \_ ->
+          let
+            -- (((a + b) - c) + d) - e
+            expected =
+              Program
+                [ ExprStmt <|
+                    Infix
+                      Sub
+                      (Infix
+                        Add
+                        (Infix
+                          Sub
+                          (Infix Add (Var "a") (Var "b"))
+                          (Var "c")
+                        )
+                        (Var "d")
+                      )
+                      (Var "e")
+                ]
+          in
+          parse "a + b - c + d - e"
+            |> Expect.equal (Ok expected)
     ]

@@ -105,52 +105,92 @@ expr = equality
 
 equality : Parser Expr
 equality =
-  let
-    buildExpr left maybeRest =
-      case maybeRest of
-        Just (op, right) ->
-          Infix op left right
-
-        Nothing ->
-          left
-  in
-  P.succeed buildExpr
-    |= comparison
-    |= optional
-        ( P.succeed Tuple.pair
-            |= P.oneOf
-                [ P.map (always Equal) doubleEqual
-                , P.map (always NotEqual) bangEqual
-                ]
-            |= comparison
-        )
+  binary comparison <|
+    P.oneOf
+        [ P.map (always Equal) doubleEqual
+        , P.map (always NotEqual) bangEqual
+        ]
 
 
 comparison : Parser Expr
 comparison =
+  binary term <|
+    P.oneOf
+        [ P.map (always LessThan) lessThan
+        , P.map (always GreaterThan) greaterThan
+        ]
+
+
+binary : Parser Expr -> Parser BinOp -> Parser Expr
+binary exprP binOpP =
   let
     buildExpr left maybeRest =
       case maybeRest of
-        Just (op, right) ->
-          Infix op left right
+        Just (binOp, right) ->
+          Infix binOp left right
 
         Nothing ->
           left
   in
   P.succeed buildExpr
-    |= term
+    |= exprP
     |= optional
         ( P.succeed Tuple.pair
-            |= P.oneOf
-                [ P.map (always LessThan) lessThan
-                , P.map (always GreaterThan) greaterThan
-                ]
-            |= term
+            |= binOpP
+            |= exprP
         )
 
 
+-- Term ::= Term ( '+' | '-' ) Factor | Factor
+--
+-- Consider, t ::= t '+' f | f. We need to eliminate the left-recursion.
+--
+-- The production generates the following:
+--
+-- f, f + f, (f + f) + f, ((f + f) + f) + f
+--
+-- The parentheses are only there to indicate the associativity, left in this
+-- case.
+--
+-- We can rewrite it as:
+--
+-- t ::= f X
+-- X ::= '+' f | ε
+--
+-- which is equivalent to:
+--
+-- t ::= f ('+' f)*
+--
+-- However, it generates the following:
+--
+-- f, f + f, f + (f + f), f + (f + (f + f))
+--
+-- i.e. associativity to the right. We need to account for that.
 term : Parser Expr
-term = primary
+term =
+  let
+    buildLeftAssocExpr x list =
+      case list of
+        [] ->
+          x
+
+        (op, y) :: rest ->
+          buildLeftAssocExpr (op x y) rest
+  in
+  P.succeed buildLeftAssocExpr
+    |= factor
+    |= many
+        ( P.succeed Tuple.pair
+            |= P.oneOf
+                [ P.map (always (Infix Add)) plus
+                , P.map (always (Infix Sub)) hyphen
+                ]
+            |= factor
+        )
+
+
+factor : Parser Expr
+factor = primary
 
 
 primary : Parser Expr
