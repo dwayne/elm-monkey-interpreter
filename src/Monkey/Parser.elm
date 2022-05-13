@@ -220,6 +220,7 @@ primary =
     , num
     , bool
     , str
+    , array
     , ifExpr
     , function
     , group
@@ -244,6 +245,13 @@ bool =
 str : Parser Expr
 str =
   P.map String string
+
+
+array : Parser Expr
+array =
+  P.lazy (\_ -> expr)
+    |> squares
+    |> P.map Array
 
 
 ifExpr : Parser Expr

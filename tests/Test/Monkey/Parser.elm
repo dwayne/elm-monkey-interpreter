@@ -95,6 +95,7 @@ expressionStatementSuite =
     , numberSuite
     , booleanSuite
     , stringSuite
+    , arraySuite
     , ifSuite
     , functionSuite
     , groupSuite
@@ -175,6 +176,74 @@ stringSuite =
           parse
             """
             "Hello, world!"
+            """
+            |> Expect.equal (Ok expected)
+    ]
+
+
+arraySuite : Test
+arraySuite =
+  describe "array"
+    [ test "example 1" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Array [])
+                ]
+          in
+          parse "[]"
+            |> Expect.equal (Ok expected)
+
+    , test "example 2" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Array [Num 1])
+                ]
+          in
+          parse "[1]"
+            |> Expect.equal (Ok expected)
+
+    , test "example 3" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Array [Num 1, Num 2])
+                ]
+          in
+          parse "[1, 2]"
+            |> Expect.equal (Ok expected)
+
+    , test "example 4" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Array
+                      [ String "Thorsten"
+                      , String "Ball"
+                      , Num 28
+                      , Function ["x"]
+                          [ ExprStmt <| Infix Mul (Var "x") (Var "x")
+                          ]
+                      , Array []
+                      , Array [Num 1, Array []]
+                      ]
+                ]
+          in
+          parse
+            """
+            [ "Thorsten"
+            , "Ball"
+            , 28
+            , fn(x) { x * x }
+            , []
+            , [1, []]
+            ]
             """
             |> Expect.equal (Ok expected)
     ]
