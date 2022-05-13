@@ -22,6 +22,8 @@ programSuite =
     , letStatementSuite
     , returnStatementSuite
     , expressionStatementSuite
+    , miscSuite
+    , bookSuite
     ]
 
 
@@ -745,5 +747,244 @@ operationSuite =
                 ]
           in
           parse "e[0](1)[2](3)"
+            |> Expect.equal (Ok expected)
+    ]
+
+
+miscSuite : Test
+miscSuite =
+  describe "miscellaneous examples"
+    [ test "example 1" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Infix
+                      LessThan
+                      (Infix
+                        Add
+                        (Num 1)
+                        (Infix Mul (Num 2) (Num 3))
+                      )
+                      (Infix
+                        Div
+                        (Infix Mul (Prefix Negate (Num 4)) (Num 4))
+                        (Num 2)
+                      )
+                ]
+          in
+          parse "1 + 2 * 3 < -4 * 4 / 2"
+            |> Expect.equal (Ok expected)
+
+    , test "example 2" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Prefix
+                      Not
+                      (Infix
+                        GreaterThan
+                        (Prefix Negate (Num 5))
+                        (Num 3)
+                      )
+                ]
+          in
+          parse "!(-5 > 3)"
+            |> Expect.equal (Ok expected)
+
+    , test "example 3" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Infix
+                      Mul
+                      (Infix Add (Num 1) (Num 2))
+                      (Num 3)
+                ]
+          in
+          parse "(1 + 2) * 3"
+            |> Expect.equal (Ok expected)
+
+    , test "example 4" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Index
+                      (Var "myArray")
+                      (Infix Add (Num 1) (Num 1))
+                ]
+          in
+          parse "myArray[1 + 1]"
+            |> Expect.equal (Ok expected)
+
+    , test "example 5" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Infix
+                      Mul
+                      (Infix
+                        Mul
+                        (Var "a")
+                        (Index
+                          (Array [Num 1, Num 2, Num 3, Num 4])
+                          (Infix Mul (Var "b") (Var "c"))
+                        )
+                      )
+                      (Var "d")
+                ]
+          in
+          parse "a * [1, 2, 3, 4][b * c] * d"
+            |> Expect.equal (Ok expected)
+
+    , test "example 6" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Call
+                      (Var "add")
+                      [ Infix Mul (Var "a") (Index (Var "b") (Num 2))
+                      , Index (Var "b") (Num 1)
+                      , Infix
+                          Mul
+                          (Num 2)
+                          (Index
+                            (Array [Num 1, Num 2])
+                            (Num 1)
+                          )
+                      ]
+                ]
+          in
+          parse "add(a * b[2], b[1], 2 * [1, 2][1])"
+            |> Expect.equal (Ok expected)
+    ]
+
+
+bookSuite : Test
+bookSuite =
+  describe "examples from the book"
+    [ test "example 1" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ Let "x" (Num 5)
+                , Let "y" (Num 10)
+                , Let "foobar" (Call (Var "add") [Num 5, Num 5])
+                , Let "barfoo"
+                    (Infix
+                      Add
+                      (Infix
+                        Sub
+                          (Infix
+                            Add
+                            (Infix
+                              Div
+                              (Infix Mul (Num 5) (Num 5))
+                              (Num 10)
+                            )
+                            (Num 18)
+                          )
+                          (Call (Var "add") [Num 5, Num 5])
+                      )
+                      (Call (Var "multiply") [Num 124])
+                    )
+                , Let "anotherName" (Var "barfoo")
+                ]
+          in
+          parse
+            """
+            let x = 5;
+            let y = 10;
+            let foobar = add(5, 5);
+            let barfoo = 5 * 5 / 10 + 18 - add(5, 5) + multiply(124);
+            let anotherName = barfoo;
+            """
+            |> Expect.equal (Ok expected)
+
+    , test "example 2" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ Let "x" (Num 10)
+                , Let "y" (Num 15)
+                , Let "add"
+                    (Function
+                      ["a", "b"]
+                      [Return (Infix Add (Var "a") (Var "b"))]
+                    )
+                ]
+          in
+          parse
+            """
+            let x = 10;
+            let y = 15;
+            let add = fn(a, b) {
+              return a + b;
+            };
+            """
+            |> Expect.equal (Ok expected)
+
+    , test "example 3" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ Return (Num 5)
+                , Return (Num 10)
+                , Return (Call (Var "add") [Num 15])
+                ]
+          in
+          parse
+            """
+            return 5;
+            return 10;
+            return add(15);
+            """
+            |> Expect.equal (Ok expected)
+
+    , test "example 4" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Infix Add (Infix Mul (Num 5) (Num 5)) (Num 10)
+                , ExprStmt <|
+                    Infix Mul (Num 5) (Infix Add (Num 5) (Num 10))
+                , ExprStmt <|
+                    Infix Sub (Prefix Negate (Num 5)) (Num 10)
+                , ExprStmt <|
+                    Infix
+                      Mul
+                      (Num 5)
+                      (Infix
+                        Add
+                        (Call (Var "add") [Num 2, Num 3])
+                        (Num 10)
+                      )
+                ]
+          in
+          parse
+            """
+            5 * 5 + 10
+            5 * (5 + 10);
+            -5 - 10
+            5 * (add(2, 3) + 10)
+            """
+            -- NOTICE: I had to add a semicolon to make it parse correctly.
+            -- Otherwise, it would be interpreted as 5 * (5 + 10) - 5 - 10.
             |> Expect.equal (Ok expected)
     ]
