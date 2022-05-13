@@ -221,6 +221,7 @@ primary =
     , bool
     , str
     , array
+    , hash
     , ifExpr
     , function
     , group
@@ -252,6 +253,19 @@ array =
   P.lazy (\_ -> expr)
     |> squares
     |> P.map Array
+
+
+hash : Parser Expr
+hash =
+  let
+    keyValue =
+      P.succeed Tuple.pair
+        |= P.lazy (\_ -> expr)
+        |. colon
+        |= P.lazy (\_ -> expr)
+  in
+  brackets keyValue
+    |> P.map Hash
 
 
 ifExpr : Parser Expr

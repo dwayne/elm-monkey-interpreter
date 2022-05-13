@@ -96,6 +96,7 @@ expressionStatementSuite =
     , booleanSuite
     , stringSuite
     , arraySuite
+    , hashSuite
     , ifSuite
     , functionSuite
     , groupSuite
@@ -244,6 +245,84 @@ arraySuite =
             , []
             , [1, []]
             ]
+            """
+            |> Expect.equal (Ok expected)
+    ]
+
+
+hashSuite : Test
+hashSuite =
+  describe "hash"
+    [ test "example 1" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt (Hash [])
+                ]
+          in
+          parse "{}"
+            |> Expect.equal (Ok expected)
+
+    , test "example 2" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Hash
+                      [ (String "name", String "Jimmy")
+                      , (String "age", Num 72)
+                      , (String "band", String "Led Zeppelin")
+                      ]
+                ]
+          in
+          parse
+            """
+            { "name": "Jimmy"
+            , "age" : 72
+            , "band": "Led Zeppelin"
+            }
+            """
+            |> Expect.equal (Ok expected)
+
+    , test "example 3" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Hash
+                      [ (Bool True, String "yes, a boolean")
+                      , (Num 99, String "correct, an integer")
+                      ]
+                ]
+          in
+          parse
+            """
+            { true: "yes, a boolean", 99: "correct, an integer" }
+            """
+            |> Expect.equal (Ok expected)
+
+    , test "example 4" <|
+        \_ ->
+          let
+            expected =
+              Program
+                [ ExprStmt <|
+                    Hash
+                      [ (String "one", Infix Add (Num 0) (Num 1))
+                      , (String "two", Infix Sub (Num 10) (Num 8))
+                      , (String "three", Infix Div (Num 15) (Num 5))
+                      ]
+                ]
+          in
+          parse
+            """
+            { "one": 0 + 1
+            , "two" : 10 - 8
+            , "three": 15 / 5
+            }
             """
             |> Expect.equal (Ok expected)
     ]
