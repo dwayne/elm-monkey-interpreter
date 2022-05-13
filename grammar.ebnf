@@ -18,6 +18,10 @@ Term       ::= Term ( '+' | '-' ) Factor | Factor
 Factor     ::= Factor ( '*' | '/' ) Unary | Unary
 Unary      ::= ( '!' | '-' ) Unary | Operator
 Operator   ::= Operator ( Call | Index ) | Primary
+
+Call       ::= '(' ')' | '(' ExprList ')'
+Index      ::= '[' Expr ']'
+
 Primary    ::= Identifier
              | Number
              | Boolean
@@ -37,11 +41,9 @@ Hash       ::= '{' '}' | '{' KeyValueList '}'
 If         ::= 'if' '(' Expr ')' Block ( 'else' Block )?
 Function   ::= 'fn' Params Block
 
-Call         ::= '(' ')' | '(' ExprList ')'
-Index        ::= '[' Expr ']'
 ExprList     ::= ExprList ',' Expr | Expr
 KeyValueList ::= KeyValueList ',' KeyValue | KeyValue
 KeyValue     ::= Expr ':' Expr
-Block        ::= '{' Stmt* '}'
 Params       ::= '(' ')' | '(' ParamList ')'
 ParamList    ::= ParamList ',' Id | Id
+Block        ::= '{' Stmt* '}'
