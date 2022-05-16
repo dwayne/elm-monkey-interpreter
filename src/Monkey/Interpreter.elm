@@ -4,6 +4,7 @@ module Monkey.Interpreter exposing
   )
 
 
+import Monkey.Environment as Env
 import Monkey.Parser as P
 
 
@@ -19,6 +20,9 @@ type Value
   | VString String
 
 
+type alias Env = Env.Environment String Value
+
+
 type Error
   = SyntaxError P.Error
   | RuntimeError RuntimeError
@@ -31,63 +35,72 @@ run : String -> Result Error Answer
 run input =
   case P.parse input of
     Ok program ->
-      evalProgram program
+      let
+        (_, result) =
+          evalProgram program Env.empty
+      in
+      result
         |> Result.mapError RuntimeError
 
     Err err ->
       Err (SyntaxError err)
 
 
-evalProgram : P.Program -> Result RuntimeError Answer
+evalProgram : P.Program -> Env -> (Env, Result RuntimeError Answer)
 evalProgram (P.Program stmts) =
   evalStmts stmts
 
 
-evalStmts : List P.Stmt -> Result RuntimeError Answer
-evalStmts stmts =
+evalStmts : List P.Stmt -> Env -> (Env, Result RuntimeError Answer)
+evalStmts stmts env =
   case stmts of
     [] ->
-      Ok Void
+      (env, Ok Void)
 
     [stmt] ->
-      evalStmt stmt
+      evalStmt stmt env
 
     stmt :: restStmts ->
-      evalStmt stmt
-        |> Result.andThen
-            (\_ ->
-              evalStmts restStmts
-            )
+      let
+        (env1, _) =
+          evalStmt stmt env
+      in
+      evalStmts restStmts env1
 
 
-evalStmt : P.Stmt -> Result RuntimeError Answer
-evalStmt stmt =
+evalStmt : P.Stmt -> Env -> (Env, Result RuntimeError Answer)
+evalStmt stmt env =
   case stmt of
     P.Let _ _ ->
-      Err NotImplemented
+      -- TODO: Eval Let.
+      (env, Err NotImplemented)
 
     P.Return _ ->
-      Err NotImplemented
+      (env, Err NotImplemented)
 
     P.ExprStmt expr ->
-      evalExpr expr
-        |> Result.map Value
+      let
+        (env1, result1) =
+          evalExpr expr env
+      in
+      (env1, Result.map Value result1)
 
 
-evalExpr : P.Expr -> Result RuntimeError Value
-evalExpr expr =
+evalExpr : P.Expr -> Env -> (Env, Result RuntimeError Value)
+evalExpr expr env =
   case expr of
     P.Var _ ->
-      Err NotImplemented
+      -- TODO: Eval Var.
+      (env, Err NotImplemented)
 
     P.Num n ->
-      Ok (VNum n)
+      (env, Ok (VNum n))
 
     P.Bool b ->
-      Ok (VBool b)
+      (env, Ok (VBool b))
 
     P.String s ->
-      Ok (VString s)
+      (env, Ok (VString s))
 
     _ ->
-      Err NotImplemented
+      (env, Err NotImplemented)
