@@ -5,6 +5,7 @@ module Monkey.Interpreter exposing
 
 
 import Monkey.Environment as Env
+import Monkey.Eval as Eval
 import Monkey.Parser as P
 
 
@@ -32,88 +33,87 @@ type RuntimeError
   | NotImplemented
 
 
+type alias Eval err a = Eval.Eval Env err a
+
+
 run : String -> Result Error Answer
 run input =
   case P.parse input of
     Ok program ->
-      let
-        (_, result) =
-          evalProgram program Env.empty
-      in
-      result
+      evalProgram program
+        |> Eval.run Env.empty
+        |> Result.map Tuple.second
         |> Result.mapError RuntimeError
 
     Err err ->
       Err (SyntaxError err)
 
 
-evalProgram : P.Program -> Env -> (Env, Result RuntimeError Answer)
+evalProgram : P.Program -> Eval RuntimeError Answer
 evalProgram (P.Program stmts) =
   evalStmts stmts
 
 
-evalStmts : List P.Stmt -> Env -> (Env, Result RuntimeError Answer)
-evalStmts stmts env =
+evalStmts : List P.Stmt -> Eval RuntimeError Answer
+evalStmts stmts =
   case stmts of
     [] ->
-      (env, Ok Void)
+      Eval.succeed Void
 
     [stmt] ->
-      evalStmt stmt env
+      evalStmt stmt
 
     stmt :: restStmts ->
-      let
-        (env1, _) =
-          evalStmt stmt env
-      in
-      evalStmts restStmts env1
+      evalStmt stmt
+        |> Eval.followedBy (evalStmts restStmts)
 
 
-evalStmt : P.Stmt -> Env -> (Env, Result RuntimeError Answer)
-evalStmt stmt env =
+evalStmt : P.Stmt -> Eval RuntimeError Answer
+evalStmt stmt =
   case stmt of
     P.Let identifier expr ->
-      let
-        (env1, result1) =
-          evalExpr expr env
-      in
-      case result1 of
-        Ok value ->
-          (Env.extend identifier value env1, Ok Void)
-
-        Err err ->
-          (env, Err err)
+      evalExpr expr
+        |> Eval.andThen
+            (\value ->
+              Eval.getState
+                |> Eval.andThen
+                    (\env ->
+                      Eval.replaceState (Env.extend identifier value env)
+                        |> Eval.followedBy (Eval.succeed Void)
+                    )
+            )
 
     P.Return _ ->
-      (env, Err NotImplemented)
+      Eval.fail NotImplemented
 
     P.ExprStmt expr ->
-      let
-        (env1, result1) =
-          evalExpr expr env
-      in
-      (env1, Result.map Value result1)
+      evalExpr expr
+        |> Eval.map Value
 
 
-evalExpr : P.Expr -> Env -> (Env, Result RuntimeError Value)
-evalExpr expr env =
+evalExpr : P.Expr -> Eval RuntimeError Value
+evalExpr expr =
   case expr of
     P.Var identifier ->
-      case Env.lookup identifier env of
-        Just value ->
-          (env, Ok value)
+      Eval.getState
+        |> Eval.andThen
+            (\env ->
+              case Env.lookup identifier env of
+                Just value ->
+                  Eval.succeed value
 
-        Nothing ->
-          (env, Err <| IdentifierNotFound identifier)
+                Nothing ->
+                  Eval.fail (IdentifierNotFound identifier)
+            )
 
     P.Num n ->
-      (env, Ok (VNum n))
+      Eval.succeed (VNum n)
 
     P.Bool b ->
-      (env, Ok (VBool b))
+      Eval.succeed (VBool b)
 
     P.String s ->
-      (env, Ok (VString s))
+      Eval.succeed (VString s)
 
     _ ->
-      (env, Err NotImplemented)
+      Eval.fail NotImplemented
