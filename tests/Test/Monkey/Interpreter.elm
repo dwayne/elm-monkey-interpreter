@@ -24,50 +24,27 @@ emptyProgramSuite =
         \_ ->
           run ""
             |> Expect.equal (Ok Void)
+
+    , test "example 2" <|
+        \_ ->
+          run "     "
+            |> Expect.equal (Ok Void)
     ]
 
 
 literalsSuite : Test
 literalsSuite =
   describe "literals"
-    [ test "example 1" <|
-        \_ ->
-          let
-            expected =
-              Value (VNum 5)
-          in
-          run "5"
-            |> Expect.equal (Ok expected)
-
-    , test "example 2" <|
-        \_ ->
-          let
-            expected =
-              Value (VBool True)
-          in
-          run "true"
-            |> Expect.equal (Ok expected)
-
-    , test "example 3" <|
-        \_ ->
-          let
-            expected =
-              Value (VBool False)
-          in
-          run "false"
-            |> Expect.equal (Ok expected)
-
-    , test "example 4" <|
-        \_ ->
-          let
-            expected =
-              Value (VString "Hello, world!")
-          in
-          run
-            """
+    [ makeGoodExamples
+        [ ("5", VNum 5)
+        , ("true", VBool True)
+        , ("false", VBool False)
+        , ( """
             "Hello, world!"
             """
-            |> Expect.equal (Ok expected)
+          , VString "Hello, world!"
+          )
+        ]
     ]
 
 
@@ -77,10 +54,10 @@ letSuite =
     [ makeGoodExamples
         [ ("let a = 5; a", VNum 5)
         , ("let b = false; b", VBool False)
-        , ("""
-           let c = "hello";
-           c
-           """
+        , ( """
+            let c = "hello";
+            c
+            """
           , VString "hello"
           )
         ]
@@ -117,14 +94,12 @@ makeExamplesHelper n revTests examples =
       List.reverse revTests
 
     (input, expected) :: restExamples ->
-      makeExamplesHelper
-        (n + 1)
-        ( test
-            ("example " ++ String.fromInt n)
-            (\_ ->
-              run input
-                |> Expect.equal expected
-            )
-          :: revTests
-        )
-        restExamples
+      makeExamplesHelper (n + 1) (makeTest n input expected :: revTests) restExamples
+
+
+makeTest : Int -> String -> Result Error Answer -> Test
+makeTest n input expected =
+  test ("example " ++ String.fromInt n) <|
+    \_ ->
+      run input
+        |> Expect.equal expected
