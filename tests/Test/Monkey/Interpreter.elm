@@ -13,6 +13,7 @@ suite =
   describe "Interpreter"
     [ emptyProgramSuite
     , literalsSuite
+    , letSuite
     ]
 
 
@@ -68,3 +69,62 @@ literalsSuite =
             """
             |> Expect.equal (Ok expected)
     ]
+
+
+letSuite : Test
+letSuite =
+  describe "let" <|
+    [ makeGoodExamples
+        [ ("let a = 5; a", VNum 5)
+        , ("let b = false; b", VBool False)
+        , ("""
+           let c = "hello";
+           c
+           """
+          , VString "hello"
+          )
+        ]
+
+    , makeBadExamples
+        [ ("let a = a; a", IdentifierNotFound "a")
+        , ("foobar", IdentifierNotFound "foobar")
+        ]
+    ]
+
+
+makeGoodExamples : List (String, Value) -> Test
+makeGoodExamples examples =
+  describe "good examples"
+    (examples
+      |> List.map (Tuple.mapSecond (Ok << Value))
+      |> makeExamplesHelper 1 []
+    )
+
+
+makeBadExamples : List (String, RuntimeError) -> Test
+makeBadExamples examples =
+  describe "bad examples"
+    (examples
+      |> List.map (Tuple.mapSecond (Err << RuntimeError))
+      |> makeExamplesHelper 1 []
+    )
+
+
+makeExamplesHelper : Int -> List Test -> List (String, Result Error Answer) -> List Test
+makeExamplesHelper n revTests examples =
+  case examples of
+    [] ->
+      List.reverse revTests
+
+    (input, expected) :: restExamples ->
+      makeExamplesHelper
+        (n + 1)
+        ( test
+            ("example " ++ String.fromInt n)
+            (\_ ->
+              run input
+                |> Expect.equal expected
+            )
+          :: revTests
+        )
+        restExamples

@@ -1,5 +1,5 @@
 module Monkey.Interpreter exposing
-  ( Answer(..), Value(..), Error(..), RuntimeError
+  ( Answer(..), Value(..), Error(..), RuntimeError(..)
   , run
   )
 
@@ -28,7 +28,8 @@ type Error
   | RuntimeError RuntimeError
 
 type RuntimeError
-  = NotImplemented
+  = IdentifierNotFound String
+  | NotImplemented
 
 
 run : String -> Result Error Answer
@@ -71,9 +72,17 @@ evalStmts stmts env =
 evalStmt : P.Stmt -> Env -> (Env, Result RuntimeError Answer)
 evalStmt stmt env =
   case stmt of
-    P.Let _ _ ->
-      -- TODO: Eval Let.
-      (env, Err NotImplemented)
+    P.Let identifier expr ->
+      let
+        (env1, result1) =
+          evalExpr expr env
+      in
+      case result1 of
+        Ok value ->
+          (Env.extend identifier value env1, Ok Void)
+
+        Err err ->
+          (env, Err err)
 
     P.Return _ ->
       (env, Err NotImplemented)
@@ -89,9 +98,13 @@ evalStmt stmt env =
 evalExpr : P.Expr -> Env -> (Env, Result RuntimeError Value)
 evalExpr expr env =
   case expr of
-    P.Var _ ->
-      -- TODO: Eval Var.
-      (env, Err NotImplemented)
+    P.Var identifier ->
+      case Env.lookup identifier env of
+        Just value ->
+          (env, Ok value)
+
+        Nothing ->
+          (env, Err <| IdentifierNotFound identifier)
 
     P.Num n ->
       (env, Ok (VNum n))
