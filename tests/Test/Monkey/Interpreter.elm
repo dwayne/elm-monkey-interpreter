@@ -15,6 +15,7 @@ suite =
     , letSuite
     , literalsSuite
     , prefixSuite
+    , infixSuite
     ]
 
 
@@ -102,6 +103,47 @@ prefixSuite =
 
         , makeBadExamples
             [ ("-true", TypeError TInt TBool)
+            ]
+        ]
+    ]
+
+
+infixSuite : Test
+infixSuite =
+  describe "infix expressions"
+    [ describe "== (equal)"
+        [ makeGoodExamples
+            [ ("1 == 1", VBool True)
+            , ("1 == 2", VBool False)
+            , ("true == true", VBool True)
+            , ("false == false", VBool True)
+            , ("true == false", VBool False)
+            , ( """
+                "apple" == "apple"
+                """
+              , VBool True
+              )
+            , ( """
+                "apple" == "bat"
+                """
+              , VBool False
+              )
+            -- , ("(1 < 2) == true", VBool True)
+            -- , ("(1 < 2) == false", VBool False)
+            -- , ("(1 > 2) == true", VBool False)
+            -- , ("(1 > 2) == false", VBool True)
+            -- , ("3 + 4 * 5 == 3 * 1 + 4 * 5", VBool True)
+            -- , ("(10 + 2) * 30 == 300 + 20 * 3", VBool True)
+            --
+            ]
+        ]
+
+    , describe "!= (not equal)"
+        [ makeGoodExamples
+            [ ("true != false", VBool True)
+            , ("false != true", VBool True)
+            -- , ("(5 > 5 == true) != false", VBool False)
+            -- , ("500 / 2 != 250", VBool False)
             ]
         ]
     ]

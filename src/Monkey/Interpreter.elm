@@ -127,6 +127,9 @@ evalExpr expr =
       evalExpr a
         |> Eval.andThen (evalPrefix op)
 
+    P.Infix op a b ->
+      Eval.andThen2 (evalInfix op) (evalExpr a) (evalExpr b)
+
     _ ->
       Eval.fail NotImplemented
 
@@ -158,6 +161,48 @@ computeNegate : Value -> Eval RuntimeError Value
 computeNegate value =
   expectInt value
     |> Eval.andThen (negate >> VNum >> Eval.succeed)
+
+
+evalInfix : P.BinOp -> Value -> Value -> Eval RuntimeError Value
+evalInfix op valueA valueB =
+  case op of
+    P.Equal ->
+      computeEqual valueA valueB
+
+    P.NotEqual ->
+      computeNotEqual valueA valueB
+
+    _ ->
+      Eval.fail NotImplemented
+
+
+computeEqual : Value -> Value -> Eval RuntimeError Value
+computeEqual valueA valueB =
+  Eval.succeed <| VBool <| valueEqual valueA valueB
+
+
+computeNotEqual : Value -> Value -> Eval RuntimeError Value
+computeNotEqual valueA valueB =
+  Eval.succeed <| VBool <| not <| valueEqual valueA valueB
+
+
+valueEqual : Value -> Value -> Bool
+valueEqual valueA valueB =
+  case (valueA, valueB) of
+    (VNull, VNull) ->
+      True
+
+    (VNum a, VNum b) ->
+      a == b
+
+    (VBool a, VBool b) ->
+      a == b
+
+    (VString a, VString b) ->
+      a == b
+
+    _ ->
+      False
 
 
 expectInt : Value -> Eval RuntimeError Int

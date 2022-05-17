@@ -4,7 +4,7 @@ module Monkey.Eval exposing
   , succeed, fail
   , getState, replaceState
   , map
-  , andThen, followedBy
+  , andThen, andThen2, followedBy
   )
 
 
@@ -73,6 +73,19 @@ andThen f (Eval st0) =
         Bad err ->
           Bad err
     )
+
+
+andThen2 : (a -> b -> Eval state err c) -> Eval state err a -> Eval state err b -> Eval state err c
+andThen2 f eval1 eval2 =
+  eval1
+    |> andThen
+        (\a ->
+          eval2
+            |> andThen
+                (\b ->
+                  f a b
+                )
+        )
 
 
 followedBy : Eval state err b -> Eval state err a -> Eval state err b
