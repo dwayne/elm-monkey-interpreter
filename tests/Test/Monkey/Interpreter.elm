@@ -12,8 +12,9 @@ suite : Test
 suite =
   describe "Interpreter"
     [ emptyProgramSuite
-    , literalsSuite
     , letSuite
+    , literalsSuite
+    , prefixSuite
     ]
 
 
@@ -29,22 +30,6 @@ emptyProgramSuite =
         \_ ->
           run "     "
             |> Expect.equal (Ok Void)
-    ]
-
-
-literalsSuite : Test
-literalsSuite =
-  describe "literals"
-    [ makeGoodExamples
-        [ ("5", VNum 5)
-        , ("true", VBool True)
-        , ("false", VBool False)
-        , ( """
-            "Hello, world!"
-            """
-          , VString "Hello, world!"
-          )
-        ]
     ]
 
 
@@ -65,6 +50,59 @@ letSuite =
     , makeBadExamples
         [ ("let a = a; a", IdentifierNotFound "a")
         , ("foobar", IdentifierNotFound "foobar")
+        ]
+    ]
+
+
+literalsSuite : Test
+literalsSuite =
+  describe "literals"
+    [ makeGoodExamples
+        [ ("5", VNum 5)
+        , ("true", VBool True)
+        , ("false", VBool False)
+        , ( """
+            "Hello, world!"
+            """
+          , VString "Hello, world!"
+          )
+        ]
+    ]
+
+
+prefixSuite : Test
+prefixSuite =
+  describe "prefix expressions"
+    [ describe "! (not)"
+        [ makeGoodExamples
+            [ ("!true", VBool False)
+            , ("!false", VBool True)
+            , ("!5", VBool False)
+            , ("!!true", VBool True)
+            , ("!!false", VBool False)
+            , ("!!5", VBool True)
+            , ("!-5", VBool False)
+            , ("!!-5", VBool True)
+            , ("!!!!-5", VBool True)
+            , ( """
+                !""
+                """
+              , VBool False
+              )
+            ]
+        ]
+
+    , describe "- (negate)"
+        [ makeGoodExamples
+            [ ("5", VNum 5)
+            , ("10", VNum 10)
+            , ("-5", VNum (-5))
+            , ("-10", VNum (-10))
+            ]
+
+        , makeBadExamples
+            [ ("-true", TypeError TInt TBool)
+            ]
         ]
     ]
 

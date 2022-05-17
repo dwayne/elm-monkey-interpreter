@@ -1,5 +1,5 @@
 module Monkey.Interpreter exposing
-  ( Answer(..), Value(..), Error(..), RuntimeError(..)
+  ( Answer(..), Value(..), Type(..), Error(..), RuntimeError(..)
   , run
   )
 
@@ -21,6 +21,13 @@ type Value
   | VString String
 
 
+type Type
+  = TNull
+  | TInt
+  | TBool
+  | TString
+
+
 type alias Env = Env.Environment String Value
 
 
@@ -30,6 +37,7 @@ type Error
 
 type RuntimeError
   = IdentifierNotFound String
+  | TypeError Type Type
   | NotImplemented
 
 
@@ -115,5 +123,64 @@ evalExpr expr =
     P.String s ->
       Eval.succeed (VString s)
 
+    P.Prefix op a ->
+      evalExpr a
+        |> Eval.andThen (evalPrefix op)
+
     _ ->
       Eval.fail NotImplemented
+
+
+evalPrefix : P.UnaryOp -> Value -> Eval RuntimeError Value
+evalPrefix op value =
+  case op of
+    P.Not ->
+      computeNot value
+
+    P.Negate ->
+      computeNegate value
+
+
+computeNot : Value -> Eval RuntimeError Value
+computeNot value =
+  case value of
+    VNull ->
+      Eval.succeed (VBool True)
+
+    VBool b ->
+      Eval.succeed (VBool <| not b)
+
+    _ ->
+      Eval.succeed (VBool False)
+
+
+computeNegate : Value -> Eval RuntimeError Value
+computeNegate value =
+  expectInt value
+    |> Eval.andThen (negate >> VNum >> Eval.succeed)
+
+
+expectInt : Value -> Eval RuntimeError Int
+expectInt value =
+  case value of
+    VNum n ->
+      Eval.succeed n
+
+    _ ->
+      Eval.fail <| TypeError TInt (typeOf value)
+
+
+typeOf : Value -> Type
+typeOf value =
+  case value of
+    VNull ->
+      TNull
+
+    VNum _ ->
+      TInt
+
+    VBool _ ->
+      TBool
+
+    VString _ ->
+      TString
