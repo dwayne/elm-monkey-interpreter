@@ -132,9 +132,8 @@ infixSuite =
             -- , ("(1 < 2) == false", VBool False)
             -- , ("(1 > 2) == true", VBool False)
             -- , ("(1 > 2) == false", VBool True)
-            -- , ("3 + 4 * 5 == 3 * 1 + 4 * 5", VBool True)
-            -- , ("(10 + 2) * 30 == 300 + 20 * 3", VBool True)
-            --
+            , ("3 + 4 * 5 == 3 * 1 + 4 * 5", VBool True)
+            , ("(10 + 2) * 30 == 300 + 20 * 3", VBool True)
             ]
         ]
 
@@ -143,7 +142,69 @@ infixSuite =
             [ ("true != false", VBool True)
             , ("false != true", VBool True)
             -- , ("(5 > 5 == true) != false", VBool False)
-            -- , ("500 / 2 != 250", VBool False)
+            , ("500 / 2 != 250", VBool False)
+            ]
+        ]
+
+    , describe "+ (add)"
+        [ makeGoodExamples
+            [ ("1 + 2", VNum 3)
+            , ( """
+                "Hello, " + "world!"
+                """
+              , VString "Hello, world!"
+              )
+            ]
+
+        , makeBadExamples
+            [ ("1 + true", UnknownOperation "+" [TInt, TBool])
+            , ("true + 1", UnknownOperation "+" [TBool, TInt])
+            , ( """
+                "a" + 1
+                """
+              , UnknownOperation "+" [TString, TInt]
+              )
+            , ("true + false", UnknownOperation "+" [TBool, TBool])
+            ]
+        ]
+
+    , describe "- (subtract)"
+        [ makeGoodExamples
+            [ ("3 - 1", VNum 2)
+            ]
+
+        , makeBadExamples
+            [ ("3 - false", UnknownOperation "-" [TInt, TBool])
+            ]
+        ]
+
+    , describe "* (multiply)"
+        [ makeGoodExamples
+            [ ("5 * 2", VNum 10)
+            ]
+
+        , makeBadExamples
+            [ ( """
+                3 * "h"
+                """
+              , UnknownOperation "*" [TInt, TString]
+              )
+            ]
+        ]
+
+    , describe "/ (divide)"
+        [ makeGoodExamples
+            [ ("6 / 2", VNum 3)
+            , ("20 / 3", VNum 6)
+            ]
+
+        , makeBadExamples
+            [ ("6 / (1 - 1)", ZeroDivisionError)
+            , ( """
+                "ab" / 2
+                """
+              , UnknownOperation "/" [TString, TInt]
+              )
             ]
         ]
     ]

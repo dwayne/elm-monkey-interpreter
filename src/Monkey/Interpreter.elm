@@ -38,6 +38,8 @@ type Error
 type RuntimeError
   = IdentifierNotFound String
   | TypeError Type Type
+  | UnknownOperation String (List Type)
+  | ZeroDivisionError
   | NotImplemented
 
 
@@ -172,6 +174,18 @@ evalInfix op valueA valueB =
     P.NotEqual ->
       computeNotEqual valueA valueB
 
+    P.Add ->
+      computeAdd valueA valueB
+
+    P.Sub ->
+      computeSub valueA valueB
+
+    P.Mul ->
+      computeMul valueA valueB
+
+    P.Div ->
+      computeDiv valueA valueB
+
     _ ->
       Eval.fail NotImplemented
 
@@ -184,6 +198,52 @@ computeEqual valueA valueB =
 computeNotEqual : Value -> Value -> Eval RuntimeError Value
 computeNotEqual valueA valueB =
   Eval.succeed <| VBool <| not <| valueEqual valueA valueB
+
+
+computeAdd : Value -> Value -> Eval RuntimeError Value
+computeAdd valueA valueB =
+  case (valueA, valueB) of
+    (VNum a, VNum b) ->
+      Eval.succeed <| VNum <| a + b
+
+    (VString a, VString b) ->
+      Eval.succeed <| VString <| a ++ b
+
+    _ ->
+      Eval.fail <| UnknownOperation "+" [typeOf valueA, typeOf valueB]
+
+
+computeSub : Value -> Value -> Eval RuntimeError Value
+computeSub valueA valueB =
+  case (valueA, valueB) of
+    (VNum a, VNum b) ->
+      Eval.succeed <| VNum <| a - b
+
+    _ ->
+      Eval.fail <| UnknownOperation "-" [typeOf valueA, typeOf valueB]
+
+
+computeMul : Value -> Value -> Eval RuntimeError Value
+computeMul valueA valueB =
+  case (valueA, valueB) of
+    (VNum a, VNum b) ->
+      Eval.succeed <| VNum <| a * b
+
+    _ ->
+      Eval.fail <| UnknownOperation "*" [typeOf valueA, typeOf valueB]
+
+
+computeDiv : Value -> Value -> Eval RuntimeError Value
+computeDiv valueA valueB =
+  case (valueA, valueB) of
+    (VNum a, VNum b) ->
+      if b /= 0 then
+        Eval.succeed <| VNum <| a // b
+      else
+        Eval.fail <| ZeroDivisionError
+
+    _ ->
+      Eval.fail <| UnknownOperation "/" [typeOf valueA, typeOf valueB]
 
 
 valueEqual : Value -> Value -> Bool
