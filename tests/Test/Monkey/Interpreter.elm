@@ -128,10 +128,10 @@ infixSuite =
                 """
               , VBool False
               )
-            -- , ("(1 < 2) == true", VBool True)
-            -- , ("(1 < 2) == false", VBool False)
-            -- , ("(1 > 2) == true", VBool False)
-            -- , ("(1 > 2) == false", VBool True)
+            , ("(1 < 2) == true", VBool True)
+            , ("(1 < 2) == false", VBool False)
+            , ("(1 > 2) == true", VBool False)
+            , ("(1 > 2) == false", VBool True)
             , ("3 + 4 * 5 == 3 * 1 + 4 * 5", VBool True)
             , ("(10 + 2) * 30 == 300 + 20 * 3", VBool True)
             ]
@@ -141,7 +141,7 @@ infixSuite =
         [ makeGoodExamples
             [ ("true != false", VBool True)
             , ("false != true", VBool True)
-            -- , ("(5 > 5 == true) != false", VBool False)
+            , ("(5 > 5 == true) != false", VBool False)
             , ("500 / 2 != 250", VBool False)
             ]
         ]

@@ -174,6 +174,12 @@ evalInfix op valueA valueB =
     P.NotEqual ->
       computeNotEqual valueA valueB
 
+    P.LessThan ->
+      computeLessThan valueA valueB
+
+    P.GreaterThan ->
+      computeGreaterThan valueA valueB
+
     P.Add ->
       computeAdd valueA valueB
 
@@ -186,9 +192,6 @@ evalInfix op valueA valueB =
     P.Div ->
       computeDiv valueA valueB
 
-    _ ->
-      Eval.fail NotImplemented
-
 
 computeEqual : Value -> Value -> Eval RuntimeError Value
 computeEqual valueA valueB =
@@ -198,6 +201,26 @@ computeEqual valueA valueB =
 computeNotEqual : Value -> Value -> Eval RuntimeError Value
 computeNotEqual valueA valueB =
   Eval.succeed <| VBool <| not <| valueEqual valueA valueB
+
+
+computeLessThan : Value -> Value -> Eval RuntimeError Value
+computeLessThan valueA valueB =
+  case (valueA, valueB) of
+    (VNum a, VNum b) ->
+      Eval.succeed <| VBool <| a < b
+
+    _ ->
+      Eval.fail <| UnknownOperation "<" [typeOf valueA, typeOf valueB]
+
+
+computeGreaterThan : Value -> Value -> Eval RuntimeError Value
+computeGreaterThan valueA valueB =
+  case (valueA, valueB) of
+    (VNum a, VNum b) ->
+      Eval.succeed <| VBool <| a > b
+
+    _ ->
+      Eval.fail <| UnknownOperation ">" [typeOf valueA, typeOf valueB]
 
 
 computeAdd : Value -> Value -> Eval RuntimeError Value
