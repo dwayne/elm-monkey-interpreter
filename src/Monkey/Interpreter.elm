@@ -131,8 +131,38 @@ evalExpr expr =
     P.Infix op a b ->
       Eval.andThen2 (evalInfix op) (evalExpr a) (evalExpr b)
 
+    P.If condition thenBlock maybeElseBlock ->
+      evalExpr condition
+        |> Eval.andThen
+            (\conditionVal ->
+              if isTruthy conditionVal then
+                evalBlock thenBlock
+              else
+                case maybeElseBlock of
+                  Just elseBlock ->
+                    evalBlock elseBlock
+
+                  Nothing ->
+                    Eval.succeed VNull
+            )
+
     _ ->
       Eval.fail NotImplemented
+
+
+evalBlock : P.Block -> Eval RuntimeError Value
+evalBlock block =
+  evalStmts block
+    |> Eval.andThen
+        (\answer ->
+            Eval.succeed <|
+              case answer of
+                Void ->
+                  VNull
+
+                Value value ->
+                  value
+        )
 
 
 evalPrefix : P.UnaryOp -> Value -> Eval RuntimeError Value
@@ -289,6 +319,19 @@ valueEqual valueA valueB =
 
     _ ->
       False
+
+
+isTruthy : Value -> Bool
+isTruthy value =
+  case value of
+    VNull ->
+      False
+
+    VBool False ->
+      False
+
+    _ ->
+      True
 
 
 typeOf : Value -> Type

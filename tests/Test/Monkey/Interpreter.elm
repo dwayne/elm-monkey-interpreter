@@ -16,6 +16,7 @@ suite =
     , literalsSuite
     , prefixSuite
     , infixSuite
+    , ifSuite
     ]
 
 
@@ -206,6 +207,21 @@ infixSuite =
               , UnknownOperation "/" [TString, TInt]
               )
             ]
+        ]
+    ]
+
+
+ifSuite : Test
+ifSuite =
+  describe "if"
+    [ makeGoodExamples
+        [ ("if (true) { 10 }", VNum 10)
+        , ("if (false) { 10 }", VNull)
+        , ("if (1) { 10 }", VNum 10)
+        , ("if (1 < 2) { 10 }", VNum 10)
+        , ("if (1 > 2) { 10 }", VNull)
+        , ("if (1 > 2) { 10 } else { 20 }", VNum 20)
+        , ("if (1 < 2) { 10 } else { 20 }", VNum 10)
         ]
     ]
 
