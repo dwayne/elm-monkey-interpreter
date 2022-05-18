@@ -37,7 +37,6 @@ type Error
 
 type RuntimeError
   = IdentifierNotFound String
-  | TypeError Type Type
   | UnknownOperation String (List Type)
   | ZeroDivisionError
   | NotImplemented
@@ -117,13 +116,13 @@ evalExpr expr =
             )
 
     P.Num n ->
-      Eval.succeed (VNum n)
+      Eval.succeed <| VNum n
 
     P.Bool b ->
-      Eval.succeed (VBool b)
+      Eval.succeed <| VBool b
 
     P.String s ->
-      Eval.succeed (VString s)
+      Eval.succeed <| VString s
 
     P.Prefix op a ->
       evalExpr a
@@ -150,19 +149,23 @@ computeNot : Value -> Eval RuntimeError Value
 computeNot value =
   case value of
     VNull ->
-      Eval.succeed (VBool True)
+      Eval.succeed <| VBool True
 
     VBool b ->
-      Eval.succeed (VBool <| not b)
+      Eval.succeed <| VBool <| not b
 
     _ ->
-      Eval.succeed (VBool False)
+      Eval.succeed <| VBool False
 
 
 computeNegate : Value -> Eval RuntimeError Value
 computeNegate value =
-  expectInt value
-    |> Eval.andThen (negate >> VNum >> Eval.succeed)
+  case value of
+    VNum n ->
+      Eval.succeed <| VNum <| negate n
+
+    _ ->
+      Eval.fail <| UnknownOperation "-" [typeOf value]
 
 
 evalInfix : P.BinOp -> Value -> Value -> Eval RuntimeError Value
@@ -263,7 +266,7 @@ computeDiv valueA valueB =
       if b /= 0 then
         Eval.succeed <| VNum <| a // b
       else
-        Eval.fail <| ZeroDivisionError
+        Eval.fail ZeroDivisionError
 
     _ ->
       Eval.fail <| UnknownOperation "/" [typeOf valueA, typeOf valueB]
@@ -286,16 +289,6 @@ valueEqual valueA valueB =
 
     _ ->
       False
-
-
-expectInt : Value -> Eval RuntimeError Int
-expectInt value =
-  case value of
-    VNum n ->
-      Eval.succeed n
-
-    _ ->
-      Eval.fail <| TypeError TInt (typeOf value)
 
 
 typeOf : Value -> Type

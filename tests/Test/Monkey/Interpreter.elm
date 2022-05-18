@@ -102,7 +102,7 @@ prefixSuite =
             ]
 
         , makeBadExamples
-            [ ("-true", TypeError TInt TBool)
+            [ ("-true", UnknownOperation "-" [TBool])
             ]
         ]
     ]
