@@ -146,6 +146,9 @@ evalExpr expr =
     P.Infix op a b ->
       Eval.andThen2 (evalInfix op) (evalExpr a) (evalExpr b)
 
+    P.Index a i ->
+      Eval.andThen2 evalIndex (evalExpr a) (evalExpr i)
+
     P.If condition thenBlock maybeElseBlock ->
       evalExpr condition
         |> Eval.andThen
@@ -389,6 +392,21 @@ valueEqual valueA valueB =
       False
 
 
+evalIndex : Value -> Value -> Eval RuntimeError Value
+evalIndex valueA valueB =
+  expectArray valueA
+    |> Eval.andThen
+        (\array ->
+          expectInt valueB
+            |> Eval.andThen
+                (\index ->
+                    Array.get index array
+                      |> Maybe.withDefault VNull
+                      |> Eval.succeed
+                )
+        )
+
+
 isTruthy : Value -> Bool
 isTruthy value =
   case value of
@@ -400,6 +418,26 @@ isTruthy value =
 
     _ ->
       True
+
+
+expectInt : Value -> Eval RuntimeError Int
+expectInt value =
+  case value of
+    VNum n ->
+      Eval.succeed n
+
+    _ ->
+      Eval.fail <| TypeError [TInt] (typeOf value)
+
+
+expectArray : Value -> Eval RuntimeError (Array Value)
+expectArray value =
+  case value of
+    VArray array ->
+      Eval.succeed array
+
+    _ ->
+      Eval.fail <| TypeError [TArray] (typeOf value)
 
 
 typeOf : Value -> Type
