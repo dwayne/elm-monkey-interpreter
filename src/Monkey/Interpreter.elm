@@ -102,13 +102,10 @@ evalStmt stmt =
       evalExpr expr
         |> Eval.andThen
             (\value ->
-              -- TODO: Refactor.
               Eval.getState
                 |> Eval.andThen
-                    (\env ->
-                      Eval.replaceState (Env.extend identifier value env)
-                        |> Eval.followedBy (Eval.succeed Void)
-                    )
+                    (Eval.replaceState << Env.extend identifier value)
+                |> Eval.followedBy (Eval.succeed Void)
             )
 
     P.Return _ ->
