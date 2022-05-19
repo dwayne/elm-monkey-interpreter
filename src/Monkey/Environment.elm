@@ -1,12 +1,15 @@
 module Monkey.Environment exposing
   ( Environment
-  , empty, lookup, extend
+  , empty
+  , lookup
+  , extend, extendMany
   )
 
 
 type Environment k v
   = Empty
   | Single k v (Environment k v)
+  | Many (List (k, v)) (Environment k v)
 
 
 empty : Environment k v
@@ -25,6 +28,31 @@ lookup searchKey env =
       else
         lookup searchKey nextEnv
 
+    Many assocs nextEnv ->
+      case assocsLookup searchKey assocs of
+        Just value ->
+          Just value
+
+        Nothing ->
+          lookup searchKey nextEnv
+
+
+assocsLookup : k -> List (k, v) -> Maybe v
+assocsLookup searchKey assocs =
+  case assocs of
+    [] ->
+      Nothing
+
+    (key, value) :: restAssocs ->
+      if searchKey == key then
+        Just value
+      else
+        assocsLookup searchKey restAssocs
+
 
 extend : k -> v -> Environment k v -> Environment k v
-extend k v env = Single k v env
+extend = Single
+
+
+extendMany : List (k, v) -> Environment k v -> Environment k v
+extendMany = Many

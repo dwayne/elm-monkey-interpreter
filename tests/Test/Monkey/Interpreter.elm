@@ -414,6 +414,48 @@ functionSuite =
           run "fn (x) { x }"
             |> Result.map answerToString
             |> Expect.equal (Ok "<function>")
+
+    , describe "calls"
+        [ makeGoodExamples
+            [ ("let identity = fn(x) { x }; identity(5)", VNum 5)
+            , ("let double = fn(x) { x * 2 }; double(5)", VNum 10)
+            , ("let add = fn(x, y) { x + y }; add(5, 5)", VNum 10)
+            , ("let add = fn(x, y) { x + y }; add(5 + 5, add(5, 5))", VNum 20)
+            , ("fn(x) { x }(5)", VNum 5)
+            , ( """
+                let newAdder = fn(x) {
+                  fn(y) { x + y }
+                };
+                let addTwo = newAdder(2);
+                addTwo(2)
+                """
+              , VNum 4
+              )
+
+            , ( """
+                let add = fn(a, b) { a + b };
+                let sub = fn(a, b) { a - b };
+                let applyFunc = fn(a, b, func) { func(a, b) };
+                applyFunc(2, 2, add)
+                """
+              , VNum 4
+              )
+            , ( """
+                let add = fn(a, b) { a + b };
+                let sub = fn(a, b) { a - b };
+                let applyFunc = fn(a, b, func) { func(a, b) };
+                applyFunc(10, 2, sub)
+                """
+              , VNum 8
+              )
+            ]
+
+        , makeBadExamples
+            [ ("1(1)", TypeError [TFunction] TInt)
+            , ("fn(x){}(1, 2)", ArgumentError 1 2)
+            , ("fn(x, y){}(1)", ArgumentError 2 1)
+            ]
+        ]
     ]
 
 

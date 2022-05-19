@@ -34,7 +34,7 @@ type alias Closure =
   }
 
 
-type alias Env = Env.Environment String Value
+type alias Env = Env.Environment P.Id Value
 
 
 type Type
@@ -52,7 +52,8 @@ type Error
   | RuntimeError RuntimeError
 
 type RuntimeError
-  = IdentifierNotFound String
+  = ArgumentError Int Int
+  | IdentifierNotFound String
   | TypeError (List Type) Type
   | UnknownOperation String (List Type)
   | ZeroDivisionError
@@ -101,6 +102,7 @@ evalStmt stmt =
       evalExpr expr
         |> Eval.andThen
             (\value ->
+              -- TODO: Refactor.
               Eval.getState
                 |> Eval.andThen
                     (\env ->
@@ -156,6 +158,9 @@ evalExpr expr =
     P.Infix op a b ->
       Eval.andThen2 (evalInfix op) (evalExpr a) (evalExpr b)
 
+    P.Call f args ->
+      Eval.andThen2 evalCall (evalExpr f) (evalExprs args)
+
     P.Index a i ->
       Eval.andThen2 evalIndex (evalExpr a) (evalExpr i)
 
@@ -177,9 +182,6 @@ evalExpr expr =
     P.Function params body ->
       Eval.getState
         |> Eval.map (VFunction << Closure params body)
-
-    _ ->
-      Eval.fail NotImplemented
 
 
 evalExprs : List P.Expr -> Eval RuntimeError (List Value)
@@ -390,6 +392,42 @@ computeDiv valueA valueB =
       Eval.fail <| UnknownOperation "/" [typeOf valueA, typeOf valueB]
 
 
+evalCall : Value -> List Value -> Eval RuntimeError Value
+evalCall value args =
+  expectFunction value
+    |> Eval.andThen (\closure -> applyClosure closure args)
+
+
+applyClosure : Closure -> List Value -> Eval RuntimeError Value
+applyClosure { params, body, savedEnv } args =
+  let
+    numParams =
+      List.length params
+
+    numArgs =
+      List.length args
+  in
+  if numParams == numArgs then
+    Env.extendMany (zip params args []) savedEnv
+      |> Eval.replaceState
+      |> Eval.followedBy (evalBlock body)
+  else
+    Eval.fail <| ArgumentError numParams numArgs
+
+
+zip : List a -> List b -> List (a, b) -> List (a, b)
+zip xs ys revList =
+  case (xs, ys) of
+    ([], []) ->
+      List.reverse revList
+
+    (x :: restXs, y :: restYs) ->
+      zip restXs restYs ((x, y) :: revList)
+
+    _ ->
+      []
+
+
 evalIndex : Value -> Value -> Eval RuntimeError Value
 evalIndex valueA valueB =
   case valueA of
@@ -413,6 +451,16 @@ evalIndex valueA valueB =
 
     _ ->
       Eval.fail <| TypeError [TArray, THash] (typeOf valueA)
+
+
+expectFunction : Value -> Eval RuntimeError Closure
+expectFunction value =
+  case value of
+    VFunction closure ->
+      Eval.succeed closure
+
+    _ ->
+      Eval.fail <| TypeError [TFunction] (typeOf value)
 
 
 expectInt : Value -> Eval RuntimeError Int
