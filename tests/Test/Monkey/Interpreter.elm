@@ -4,7 +4,7 @@ module Test.Monkey.Interpreter exposing (suite)
 import Expect
 import Test exposing (..)
 
-
+import Array
 import Monkey.Interpreter exposing (..)
 
 
@@ -14,6 +14,7 @@ suite =
     [ emptyProgramSuite
     , letSuite
     , literalsSuite
+    , arraysSuite
     , prefixSuite
     , infixSuite
     , ifSuite
@@ -67,6 +68,36 @@ literalsSuite =
             "Hello, world!"
             """
           , VString "Hello, world!"
+          )
+        ]
+    ]
+
+
+arraysSuite : Test
+arraysSuite =
+  describe "arrays"
+    [ makeGoodExamples
+        [ ("[]", VArray <| Array.fromList [])
+        , ("[1]", VArray <| Array.fromList [VNum 1])
+        , ("[1, 2]", VArray <| Array.fromList [VNum 1, VNum 2])
+        , ("[1, false, true, \"four\", [], [[]]]"
+          , VArray <| Array.fromList
+              [ VNum 1
+              , VBool False
+              , VBool True
+              , VString "four"
+              , VArray <| Array.fromList []
+              , VArray <| Array.fromList
+                  [ VArray <| Array.fromList []
+                  ]
+              ]
+          )
+        , ( """
+            [ if (true) { let x = 1; }
+            , x
+            ]
+            """
+          , VArray <| Array.fromList [VNull, VNum 1]
           )
         ]
     ]

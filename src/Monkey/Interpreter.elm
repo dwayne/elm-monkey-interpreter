@@ -4,6 +4,7 @@ module Monkey.Interpreter exposing
   )
 
 
+import Array exposing (Array)
 import Monkey.Environment as Env
 import Monkey.Eval as Eval
 import Monkey.Parser as P
@@ -19,6 +20,7 @@ type Value
   | VNum Int
   | VBool Bool
   | VString String
+  | VArray (Array Value)
 
 
 type Type
@@ -26,6 +28,7 @@ type Type
   | TInt
   | TBool
   | TString
+  | TArray
 
 
 type alias Env = Env.Environment String Value
@@ -124,6 +127,10 @@ evalExpr expr =
     P.String s ->
       Eval.succeed <| VString s
 
+    P.Array exprs ->
+      evalExprs exprs
+        |> Eval.map (VArray << Array.fromList)
+
     P.Prefix op a ->
       evalExpr a
         |> Eval.andThen (evalPrefix op)
@@ -148,6 +155,20 @@ evalExpr expr =
 
     _ ->
       Eval.fail NotImplemented
+
+
+evalExprs : List P.Expr -> Eval RuntimeError (List Value)
+evalExprs exprs =
+  case exprs of
+    [] ->
+      Eval.succeed []
+
+    expr :: restExprs ->
+      evalExpr expr
+        |> Eval.andThen
+            (\value ->
+                Eval.map ((::) value) (evalExprs restExprs)
+            )
 
 
 evalBlock : P.Block -> Eval RuntimeError Value
@@ -348,3 +369,6 @@ typeOf value =
 
     VString _ ->
       TString
+
+    VArray _ ->
+      TArray
