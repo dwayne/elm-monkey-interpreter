@@ -1,7 +1,9 @@
 module Monkey.Hash exposing
   ( Hash, Key(..)
   , fromList
+  , toList
   , lookup
+  , keyToString
   )
 
 
@@ -15,8 +17,11 @@ type Key
 
 
 fromList : List (Key, v) -> Hash v
-fromList =
-  Hash
+fromList = Hash
+
+
+toList : Hash v -> List (Key, v)
+toList (Hash assocs) = assocs
 
 
 lookup : Key -> Hash v -> Maybe v
@@ -35,3 +40,16 @@ lookup searchKey (Hash assocs) =
             helper rest
   in
   helper assocs
+
+
+keyToString : Key -> String
+keyToString key =
+  case key of
+    KNum n ->
+      String.fromInt n
+
+    KBool b ->
+      if b then "true" else "false"
+
+    KString s ->
+      "\"" ++ s ++ "\""

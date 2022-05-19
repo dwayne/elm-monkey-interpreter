@@ -1,6 +1,7 @@
 module Monkey.Interpreter exposing
   ( Answer(..), Value(..), Type(..), Error(..), RuntimeError(..)
   , run
+  , answerToString
   )
 
 
@@ -23,6 +24,17 @@ type Value
   | VString String
   | VArray (Array Value)
   | VHash (Hash Value)
+  | VFunction Closure
+
+
+type alias Closure =
+  { params : List P.Id
+  , body : P.Block
+  , savedEnv : Env
+  }
+
+
+type alias Env = Env.Environment String Value
 
 
 type Type
@@ -32,9 +44,7 @@ type Type
   | TString
   | TArray
   | THash
-
-
-type alias Env = Env.Environment String Value
+  | TFunction
 
 
 type Error
@@ -163,6 +173,10 @@ evalExpr expr =
                   Nothing ->
                     Eval.succeed VNull
             )
+
+    P.Function params body ->
+      Eval.getState
+        |> Eval.map (VFunction << Closure params body)
 
     _ ->
       Eval.fail NotImplemented
@@ -460,3 +474,58 @@ typeOf value =
 
     VHash _ ->
       THash
+
+    VFunction _ ->
+      TFunction
+
+
+answerToString : Answer -> String
+answerToString answer =
+  case answer of
+    Void ->
+      ""
+
+    Value value ->
+      valueToString value
+
+
+valueToString : Value -> String
+valueToString value =
+  case value of
+    VNull ->
+      "null"
+
+    VNum n ->
+      String.fromInt n
+
+    VBool b ->
+      if b then "true" else "false"
+
+    VString s ->
+      "\"" ++ s ++ "\""
+
+    VArray array ->
+      let
+        inside =
+          array
+            |> Array.toList
+            |> List.map valueToString
+            |> String.join ", "
+      in
+      "[" ++ inside ++ "]"
+
+    VHash hash ->
+      let
+        inside =
+          hash
+            |> Hash.toList
+            |> List.map
+                (\(k, v) ->
+                    Hash.keyToString k ++ ": " ++ valueToString v
+                )
+            |> String.join ", "
+      in
+      "{" ++ inside ++ "}"
+
+    VFunction _ ->
+      "<function>"

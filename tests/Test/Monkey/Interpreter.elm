@@ -20,6 +20,8 @@ suite =
     , prefixSuite
     , infixSuite
     , ifSuite
+    , functionSuite
+    , answerToStringSuite
     ]
 
 
@@ -395,6 +397,107 @@ ifSuite =
         , ("if (1 > 2) { 10 } else { 20 }", VNum 20)
         , ("if (1 < 2) { 10 } else { 20 }", VNum 10)
         ]
+    ]
+
+
+functionSuite : Test
+functionSuite =
+  describe "function"
+    [ test "example 1" <|
+        \_ ->
+          run "fn(){}"
+            |> Result.map answerToString
+            |> Expect.equal (Ok "<function>")
+
+    , test "example 2" <|
+        \_ ->
+          run "fn (x) { x }"
+            |> Result.map answerToString
+            |> Expect.equal (Ok "<function>")
+    ]
+
+
+answerToStringSuite : Test
+answerToStringSuite =
+  describe "answerToString"
+    [ test "example 1" <|
+        \_ ->
+          answerToString Void
+            |> Expect.equal ""
+
+    , test "example 2" <|
+        \_ ->
+          answerToString (Value VNull)
+            |> Expect.equal "null"
+
+    , test "example 3" <|
+        \_ ->
+          answerToString (Value <| VNum 5)
+            |> Expect.equal "5"
+
+    , test "example 4" <|
+        \_ ->
+          answerToString (Value <| VBool True)
+            |> Expect.equal "true"
+
+    , test "example 5" <|
+        \_ ->
+          answerToString (Value <| VBool False)
+            |> Expect.equal "false"
+
+    , test "example 6" <|
+        \_ ->
+          answerToString (Value <| VString "hello")
+            |> Expect.equal "\"hello\""
+
+    , test "example 7" <|
+        \_ ->
+          let
+            array =
+              Array.fromList []
+          in
+          answerToString (Value <| VArray array)
+            |> Expect.equal "[]"
+
+    , test "example 8" <|
+        \_ ->
+          let
+            array =
+              Array.fromList
+                [ VNull
+                , VNum 1
+                , VBool True
+                , VString "x"
+                , VArray <| Array.fromList []
+                ]
+          in
+          answerToString (Value <| VArray array)
+            |> Expect.equal "[null, 1, true, \"x\", []]"
+
+    , test "example 9" <|
+        \_ ->
+          let
+            hash =
+              Hash.fromList []
+          in
+          answerToString (Value <| VHash hash)
+            |> Expect.equal "{}"
+
+    , test "example 10" <|
+        \_ ->
+          let
+            hash =
+              Hash.fromList
+                [ (Hash.KNum 1, VNull)
+                , (Hash.KBool True, VNum 1)
+                , (Hash.KBool False, VBool True)
+                , (Hash.KString "hello", VString "world")
+                , (Hash.KString "empty", VArray <| Array.fromList [])
+                ]
+          in
+          answerToString (Value <| VHash hash)
+            |> Expect.equal
+                "{1: null, true: 1, false: true, \"hello\": \"world\", \"empty\": []}"
     ]
 
 
