@@ -7,6 +7,7 @@ module Monkey.Interpreter exposing
 import Array exposing (Array)
 import Monkey.Environment as Env
 import Monkey.Eval as Eval
+import Monkey.Hash as Hash exposing (Hash)
 import Monkey.Parser as P
 
 
@@ -21,6 +22,7 @@ type Value
   | VBool Bool
   | VString String
   | VArray (Array Value)
+  | VHash (Hash Value)
 
 
 type Type
@@ -29,6 +31,7 @@ type Type
   | TBool
   | TString
   | TArray
+  | THash
 
 
 type alias Env = Env.Environment String Value
@@ -40,6 +43,7 @@ type Error
 
 type RuntimeError
   = IdentifierNotFound String
+  | TypeError (List Type) Type
   | UnknownOperation String (List Type)
   | ZeroDivisionError
   | NotImplemented
@@ -131,6 +135,10 @@ evalExpr expr =
       evalExprs exprs
         |> Eval.map (VArray << Array.fromList)
 
+    P.Hash kvExprs ->
+      evalKVExprs kvExprs
+        |> Eval.map (VHash << Hash.fromList)
+
     P.Prefix op a ->
       evalExpr a
         |> Eval.andThen (evalPrefix op)
@@ -167,8 +175,47 @@ evalExprs exprs =
       evalExpr expr
         |> Eval.andThen
             (\value ->
-                Eval.map ((::) value) (evalExprs restExprs)
+                evalExprs restExprs
+                  |> Eval.map ((::) value)
             )
+
+evalKVExprs : List (P.Expr, P.Expr) -> Eval RuntimeError (List (Hash.Key, Value))
+evalKVExprs kvExprs =
+  case kvExprs of
+    [] ->
+      Eval.succeed []
+
+    (keyExpr, valueExpr) :: restKVExprs ->
+      evalExpr keyExpr
+        |> Eval.andThen
+            (\possibleKey ->
+                expectKey possibleKey
+                  |> Eval.andThen
+                      (\key ->
+                          evalExpr valueExpr
+                            |> Eval.andThen
+                                (\value ->
+                                    evalKVExprs restKVExprs
+                                      |> Eval.map ((::) (key, value))
+                                )
+                      )
+            )
+
+
+expectKey : Value -> Eval RuntimeError Hash.Key
+expectKey value =
+  case value of
+    VNum n ->
+      Eval.succeed <| Hash.KNum n
+
+    VBool b ->
+      Eval.succeed <| Hash.KBool b
+
+    VString s ->
+      Eval.succeed <| Hash.KString s
+
+    _ ->
+      Eval.fail <| TypeError [TInt, TBool, TString] (typeOf value)
 
 
 evalBlock : P.Block -> Eval RuntimeError Value
@@ -372,3 +419,6 @@ typeOf value =
 
     VArray _ ->
       TArray
+
+    VHash _ ->
+      THash
