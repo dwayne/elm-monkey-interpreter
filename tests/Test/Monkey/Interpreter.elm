@@ -139,7 +139,7 @@ arraysSuite =
 
         , makeBadExamples
             [ ( "1[0]"
-              , TypeError [TArray] TInt
+              , TypeError [TArray, THash] TInt
               )
             , ( "[1][false]"
               , TypeError [TInt] TBool
@@ -192,6 +192,54 @@ hashSuite =
               , (Hash.KBool False, VNum 6)
               ]
           )
+        ]
+
+    , describe "index"
+        [ makeGoodExamples
+            [ ( """
+                {"foo": 5}["foo"]
+                """
+              , VNum 5
+              )
+            , ( """
+                {"foo": 5}["bar"]
+                """
+              , VNull
+              )
+            , ( """
+                let key = "foo"; {"foo": 5}[key]
+                """
+              , VNum 5
+              )
+            , ( """
+                {}["foo"]
+                """
+              , VNull
+              )
+            , ( """
+                {5: 5}[5]
+                """
+              , VNum 5
+              )
+            , ( """
+                {true: 5}[true]
+                """
+              , VNum 5
+              )
+            , ( """
+                {false: 5}[false]
+                """
+              , VNum 5
+              )
+            ]
+
+        , makeBadExamples
+            [ ( """
+                {"name": "Monkey"}[[]]
+                """
+              , TypeError [TInt, TBool, TString] TArray
+              )
+            ]
         ]
     ]
 

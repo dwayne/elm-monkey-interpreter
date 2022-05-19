@@ -205,22 +205,6 @@ evalKVExprs kvExprs =
             )
 
 
-expectKey : Value -> Eval RuntimeError Hash.Key
-expectKey value =
-  case value of
-    VNum n ->
-      Eval.succeed <| Hash.KNum n
-
-    VBool b ->
-      Eval.succeed <| Hash.KBool b
-
-    VString s ->
-      Eval.succeed <| Hash.KString s
-
-    _ ->
-      Eval.fail <| TypeError [TInt, TBool, TString] (typeOf value)
-
-
 evalBlock : P.Block -> Eval RuntimeError Value
 evalBlock block =
   evalStmts block
@@ -307,6 +291,25 @@ computeNotEqual valueA valueB =
   Eval.succeed <| VBool <| not <| valueEqual valueA valueB
 
 
+valueEqual : Value -> Value -> Bool
+valueEqual valueA valueB =
+  case (valueA, valueB) of
+    (VNull, VNull) ->
+      True
+
+    (VNum a, VNum b) ->
+      a == b
+
+    (VBool a, VBool b) ->
+      a == b
+
+    (VString a, VString b) ->
+      a == b
+
+    _ ->
+      False
+
+
 computeLessThan : Value -> Value -> Eval RuntimeError Value
 computeLessThan valueA valueB =
   case (valueA, valueB) of
@@ -373,38 +376,55 @@ computeDiv valueA valueB =
       Eval.fail <| UnknownOperation "/" [typeOf valueA, typeOf valueB]
 
 
-valueEqual : Value -> Value -> Bool
-valueEqual valueA valueB =
-  case (valueA, valueB) of
-    (VNull, VNull) ->
-      True
-
-    (VNum a, VNum b) ->
-      a == b
-
-    (VBool a, VBool b) ->
-      a == b
-
-    (VString a, VString b) ->
-      a == b
-
-    _ ->
-      False
-
-
 evalIndex : Value -> Value -> Eval RuntimeError Value
 evalIndex valueA valueB =
-  expectArray valueA
-    |> Eval.andThen
-        (\array ->
-          expectInt valueB
-            |> Eval.andThen
-                (\index ->
-                    Array.get index array
-                      |> Maybe.withDefault VNull
-                      |> Eval.succeed
-                )
-        )
+  case valueA of
+    VArray array ->
+      expectInt valueB
+        |> Eval.andThen
+            (\index ->
+                Array.get index array
+                  |> Maybe.withDefault VNull
+                  |> Eval.succeed
+            )
+
+    VHash hash ->
+      expectKey valueB
+        |> Eval.andThen
+            (\key ->
+                Hash.lookup key hash
+                  |> Maybe.withDefault VNull
+                  |> Eval.succeed
+            )
+
+    _ ->
+      Eval.fail <| TypeError [TArray, THash] (typeOf valueA)
+
+
+expectInt : Value -> Eval RuntimeError Int
+expectInt value =
+  case value of
+    VNum n ->
+      Eval.succeed n
+
+    _ ->
+      Eval.fail <| TypeError [TInt] (typeOf value)
+
+
+expectKey : Value -> Eval RuntimeError Hash.Key
+expectKey value =
+  case value of
+    VNum n ->
+      Eval.succeed <| Hash.KNum n
+
+    VBool b ->
+      Eval.succeed <| Hash.KBool b
+
+    VString s ->
+      Eval.succeed <| Hash.KString s
+
+    _ ->
+      Eval.fail <| TypeError [TInt, TBool, TString] (typeOf value)
 
 
 isTruthy : Value -> Bool
@@ -418,26 +438,6 @@ isTruthy value =
 
     _ ->
       True
-
-
-expectInt : Value -> Eval RuntimeError Int
-expectInt value =
-  case value of
-    VNum n ->
-      Eval.succeed n
-
-    _ ->
-      Eval.fail <| TypeError [TInt] (typeOf value)
-
-
-expectArray : Value -> Eval RuntimeError (Array Value)
-expectArray value =
-  case value of
-    VArray array ->
-      Eval.succeed array
-
-    _ ->
-      Eval.fail <| TypeError [TArray] (typeOf value)
 
 
 typeOf : Value -> Type
