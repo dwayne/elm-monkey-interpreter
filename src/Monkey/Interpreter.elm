@@ -99,14 +99,22 @@ evalStmt : P.Stmt -> Eval RuntimeError Answer
 evalStmt stmt =
   case stmt of
     P.Let identifier expr ->
-      evalExpr expr
-        |> Eval.andThen
-            (\value ->
-              Eval.getState
-                |> Eval.andThen
-                    (Eval.replaceState << Env.extend identifier value)
-                |> Eval.followedBy (Eval.succeed Void)
-            )
+      case expr of
+        P.Function _ _ ->
+          Eval.getState
+            |> Eval.andThen
+                (Eval.replaceState << Env.extendRec identifier expr)
+            |> Eval.followedBy (Eval.succeed Void)
+
+        _ ->
+          evalExpr expr
+            |> Eval.andThen
+                (\value ->
+                  Eval.getState
+                    |> Eval.andThen
+                        (Eval.replaceState << Env.extend identifier value)
+                    |> Eval.followedBy (Eval.succeed Void)
+                )
 
     P.Return _ ->
       Eval.fail NotImplemented
@@ -124,10 +132,13 @@ evalExpr expr =
         |> Eval.andThen
             (\env ->
               case Env.lookup identifier env of
-                Just value ->
+                Env.FoundValue value ->
                   Eval.succeed value
 
-                Nothing ->
+                Env.FoundExpr savedExpr ->
+                  evalExpr savedExpr
+
+                Env.NotFound ->
                   Eval.fail (IdentifierNotFound identifier)
             )
 

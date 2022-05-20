@@ -456,6 +456,57 @@ functionSuite =
             , ("fn(x, y){}(1)", ArgumentError 2 1)
             ]
         ]
+
+    , describe "recursion"
+        [ makeGoodExamples
+            [ ( """
+                let sum = fn(n) {
+                  if (n == 0) {
+                    0
+                  } else {
+                    n + sum(n - 1)
+                  }
+                };
+                sum(10)
+                """
+              , VNum 55
+              )
+            , ( """
+                let factorial = fn(n) {
+                  if (n == 0) {
+                    1
+                  } else {
+                    n * factorial(n - 1)
+                  }
+                };
+                factorial(5)
+                """
+              , VNum 120
+              )
+            -- FIXME: This doesn't work as expected.
+            --
+            -- I get the following error:
+            --
+            --   RangeError: Maximum call stack size exceeded
+            --
+            -- , ( """
+            --     let fib = fn(n) {
+            --       if (n == 0) {
+            --         1
+            --       } else {
+            --         if (n == 1) {
+            --           1
+            --         } else {
+            --           fib(n - 1) + fib(n - 2)
+            --         }
+            --       }
+            --     };
+            --     fib(10)
+            --     """
+            --   , VNum 89
+            --   )
+            ]
+        ]
     ]
 
 
