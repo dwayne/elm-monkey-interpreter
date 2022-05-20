@@ -1,6 +1,6 @@
 module Monkey.Environment exposing
   ( Environment
-  , empty
+  , empty, fromList
 
   , LookupResult(..)
   , lookup
@@ -21,6 +21,10 @@ type Environment k v
 
 empty : Environment k v
 empty = Empty
+
+
+fromList : List (k, v) -> Environment k v
+fromList assocs = Many assocs Empty
 
 
 type LookupResult v

@@ -25,6 +25,7 @@ type Value
   | VArray (Array Value)
   | VHash (Hash Value)
   | VFunction Closure
+  | VBuiltInFunction BuiltInFunction
 
 
 type alias Closure =
@@ -32,6 +33,9 @@ type alias Closure =
   , body : P.Block
   , savedEnv : Env
   }
+
+
+type alias BuiltInFunction = List Value -> Eval RuntimeError Value
 
 
 type alias Env = Env.Environment P.Id Value
@@ -68,7 +72,7 @@ run input =
   case P.parse input of
     Ok program ->
       evalProgram program
-        |> Eval.run Env.empty
+        |> Eval.run builtInFunctions
         |> Result.map Tuple.second
         |> Result.mapError RuntimeError
 
@@ -402,8 +406,15 @@ computeDiv valueA valueB =
 
 evalCall : Value -> List Value -> Eval RuntimeError Value
 evalCall value args =
-  expectFunction value
-    |> Eval.andThen (\closure -> applyClosure closure args)
+  case value of
+    VFunction closure ->
+      applyClosure closure args
+
+    VBuiltInFunction builtInFunction ->
+      builtInFunction args
+
+    _ ->
+      Eval.fail <| TypeError [TFunction] (typeOf value)
 
 
 applyClosure : Closure -> List Value -> Eval RuntimeError Value
@@ -459,16 +470,6 @@ evalIndex valueA valueB =
 
     _ ->
       Eval.fail <| TypeError [TArray, THash] (typeOf valueA)
-
-
-expectFunction : Value -> Eval RuntimeError Closure
-expectFunction value =
-  case value of
-    VFunction closure ->
-      Eval.succeed closure
-
-    _ ->
-      Eval.fail <| TypeError [TFunction] (typeOf value)
 
 
 expectInt : Value -> Eval RuntimeError Int
@@ -534,6 +535,9 @@ typeOf value =
     VFunction _ ->
       TFunction
 
+    VBuiltInFunction _ ->
+      TFunction
+
 
 answerToString : Answer -> String
 answerToString answer =
@@ -585,3 +589,30 @@ valueToString value =
 
     VFunction _ ->
       "<function>"
+
+    VBuiltInFunction _ ->
+      "<built-in-function>"
+
+
+builtInFunctions : Env
+builtInFunctions =
+  [ ("len", builtInLen)
+  ]
+  |> List.map (Tuple.mapSecond VBuiltInFunction)
+  |> Env.fromList
+
+
+builtInLen : BuiltInFunction
+builtInLen args =
+  case args of
+    [VString s] ->
+      Eval.succeed <| VNum <| String.length s
+
+    [VArray a] ->
+      Eval.succeed <| VNum <| Array.length a
+
+    [arg] ->
+      Eval.fail <| TypeError [TString, TArray] (typeOf arg)
+
+    _ ->
+      Eval.fail <| ArgumentError 1 (List.length args)

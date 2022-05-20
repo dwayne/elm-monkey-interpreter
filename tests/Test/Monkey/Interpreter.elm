@@ -21,6 +21,7 @@ suite =
     , infixSuite
     , ifSuite
     , functionSuite
+    , builtInFunctionsSuite
     , answerToStringSuite
     ]
 
@@ -505,6 +506,44 @@ functionSuite =
             --     """
             --   , VNum 89
             --   )
+            ]
+        ]
+    ]
+
+
+builtInFunctionsSuite : Test
+builtInFunctionsSuite =
+  describe "built-in functions"
+    [ describe "len"
+        [ makeGoodExamples
+            [ ( """
+                len("")
+                """
+              , VNum 0
+              )
+            , ( """
+                len("four")
+                """
+              , VNum 4
+              )
+            , ( """
+                len("hello world")
+                """
+              , VNum 11
+              )
+            ]
+
+        , makeBadExamples
+            [ ( """
+                len(1)
+                """
+              , TypeError [TString, TArray] TInt
+              )
+            , ( """
+                len("one", "two")
+                """
+              , ArgumentError 1 2
+              )
             ]
         ]
     ]
