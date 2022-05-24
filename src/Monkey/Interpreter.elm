@@ -597,6 +597,7 @@ valueToString value =
 builtInFunctions : Env
 builtInFunctions =
   [ ("len", builtInLen)
+  , ("first", builtInFirst)
   ]
   |> List.map (Tuple.mapSecond VBuiltInFunction)
   |> Env.fromList
@@ -613,6 +614,21 @@ builtInLen args =
 
     [arg] ->
       Eval.fail <| TypeError [TString, TArray] (typeOf arg)
+
+    _ ->
+      Eval.fail <| ArgumentError 1 (List.length args)
+
+
+builtInFirst : BuiltInFunction
+builtInFirst args =
+  case args of
+    [VArray a] ->
+      Array.get 0 a
+        |> Maybe.withDefault VNull
+        |> Eval.succeed
+
+    [arg] ->
+      Eval.fail <| TypeError [TArray] (typeOf arg)
 
     _ ->
       Eval.fail <| ArgumentError 1 (List.length args)

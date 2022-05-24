@@ -546,6 +546,19 @@ builtInFunctionsSuite =
               )
             ]
         ]
+
+    , describe "first"
+        [ makeGoodExamples
+            [ ("first([])", VNull)
+            , ("first([1])", VNum 1)
+            , ("first([1, 2])", VNum 1)
+            ]
+
+        , makeBadExamples
+            [ ("first(1)", TypeError [TArray] TInt)
+            , ("first([], 1)", ArgumentError 1 2)
+            ]
+        ]
     ]
 
 
