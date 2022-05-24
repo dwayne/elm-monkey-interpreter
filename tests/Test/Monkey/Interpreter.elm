@@ -588,6 +588,22 @@ builtInFunctionsSuite =
             , ("rest([], 1)", ArgumentError 1 2)
             ]
         ]
+
+    , describe "push"
+        [ makeGoodExamples
+            [ ("push([], 1)", VArray <| Array.fromList [VNum 1])
+            , ("push([1], 2)", VArray <| Array.fromList [VNum 1, VNum 2])
+            , ("push([1, 2], 3)", VArray <| Array.fromList [VNum 1, VNum 2, VNum 3])
+            , ("push(push(push([], 1), 2), 3)", VArray <| Array.fromList [VNum 1, VNum 2, VNum 3])
+            ]
+
+        , makeBadExamples
+            [ ("push(1, true)", TypeError [TArray] TInt)
+            , ("push([])", ArgumentError 2 1)
+            , ("push([], 1, true)", ArgumentError 2 3)
+            ]
+
+        ]
     ]
 
 

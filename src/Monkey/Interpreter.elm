@@ -600,6 +600,7 @@ builtInFunctions =
   , ("first", builtInFirst)
   , ("last", builtInLast)
   , ("rest", builtInRest)
+  , ("push", builtInPush)
   ]
   |> List.map (Tuple.mapSecond VBuiltInFunction)
   |> Env.fromList
@@ -669,3 +670,16 @@ builtInRest args =
 
     _ ->
       Eval.fail <| ArgumentError 1 (List.length args)
+
+
+builtInPush : BuiltInFunction
+builtInPush args =
+  case args of
+    [VArray a, value] ->
+      Eval.succeed <| VArray <| Array.push value a
+
+    [arg, _] ->
+      Eval.fail <| TypeError [TArray] (typeOf arg)
+
+    _ ->
+      Eval.fail <| ArgumentError 2 (List.length args)
