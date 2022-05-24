@@ -573,6 +573,21 @@ builtInFunctionsSuite =
             , ("last([], 1)", ArgumentError 1 2)
             ]
         ]
+
+    , describe "rest"
+        [ makeGoodExamples
+            [ ("rest([])", VNull)
+            , ("rest([1])", VArray <| Array.fromList [])
+            , ("rest([1, 2])", VArray <| Array.fromList [VNum 2])
+            , ("rest([1, 2, 3])", VArray <| Array.fromList [VNum 2, VNum 3])
+            , ("rest(rest([1, 2, 3]))", VArray <| Array.fromList [VNum 3])
+            ]
+
+        , makeBadExamples
+            [ ("rest(1)", TypeError [TArray] TInt)
+            , ("rest([], 1)", ArgumentError 1 2)
+            ]
+        ]
     ]
 
 
