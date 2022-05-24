@@ -598,6 +598,7 @@ builtInFunctions : Env
 builtInFunctions =
   [ ("len", builtInLen)
   , ("first", builtInFirst)
+  , ("last", builtInLast)
   ]
   |> List.map (Tuple.mapSecond VBuiltInFunction)
   |> Env.fromList
@@ -624,6 +625,21 @@ builtInFirst args =
   case args of
     [VArray a] ->
       Array.get 0 a
+        |> Maybe.withDefault VNull
+        |> Eval.succeed
+
+    [arg] ->
+      Eval.fail <| TypeError [TArray] (typeOf arg)
+
+    _ ->
+      Eval.fail <| ArgumentError 1 (List.length args)
+
+
+builtInLast : BuiltInFunction
+builtInLast args =
+  case args of
+    [VArray a] ->
+      Array.get (Array.length a - 1) a
         |> Maybe.withDefault VNull
         |> Eval.succeed
 

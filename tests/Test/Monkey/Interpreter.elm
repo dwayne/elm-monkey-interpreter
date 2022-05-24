@@ -559,6 +559,20 @@ builtInFunctionsSuite =
             , ("first([], 1)", ArgumentError 1 2)
             ]
         ]
+
+    , describe "last"
+        [ makeGoodExamples
+            [ ("last([])", VNull)
+            , ("last([1])", VNum 1)
+            , ("last([1, 2])", VNum 2)
+            , ("last([1, 2, 3])", VNum 3)
+            ]
+
+        , makeBadExamples
+            [ ("last(1)", TypeError [TArray] TInt)
+            , ("last([], 1)", ArgumentError 1 2)
+            ]
+        ]
     ]
 
 
