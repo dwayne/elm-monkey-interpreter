@@ -595,7 +595,7 @@ valueToString value =
       "<function>"
 
     VBuiltInFunction _ ->
-      "<built-in-function>"
+      "<built-in function>"
 
 
 builtInFunctions : Env
