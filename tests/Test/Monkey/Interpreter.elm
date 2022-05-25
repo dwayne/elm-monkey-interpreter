@@ -31,12 +31,12 @@ emptyProgramSuite =
   describe "empty program"
     [ test "example 1" <|
         \_ ->
-          run ""
+          runForResult ""
             |> Expect.equal (Ok Void)
 
     , test "example 2" <|
         \_ ->
-          run "     "
+          runForResult "     "
             |> Expect.equal (Ok Void)
     ]
 
@@ -406,13 +406,13 @@ functionSuite =
   describe "function"
     [ test "example 1" <|
         \_ ->
-          run "fn(){}"
+          runForResult "fn(){}"
             |> Result.map answerToString
             |> Expect.equal (Ok "<function>")
 
     , test "example 2" <|
         \_ ->
-          run "fn (x) { x }"
+          runForResult "fn (x) { x }"
             |> Result.map answerToString
             |> Expect.equal (Ok "<function>")
 
@@ -604,6 +604,77 @@ builtInFunctionsSuite =
             ]
 
         ]
+
+    , describe "puts"
+        [ test "example 1" <|
+            \_ ->
+              run "puts()"
+                |> Expect.equal
+                    ( Ok (Value VNull)
+                    , []
+                    )
+
+        , test "example 2" <|
+            \_ ->
+              run
+                """
+                let x = 5;
+                puts(x, 10, true, false, "hello")
+                """
+                |> Expect.equal
+                    ( Ok (Value VNull)
+                    , [ "5"
+                      , "10"
+                      , "true"
+                      , "false"
+                      , "\"hello\""
+                      ]
+                    )
+
+        , test "example 3" <|
+            \_ ->
+              run
+                """
+                puts([], [1], [1,2])
+                """
+                |> Expect.equal
+                    ( Ok (Value VNull)
+                    , [ "[]"
+                      , "[1]"
+                      , "[1, 2]"
+                      ]
+                    )
+
+        , test "example 4" <|
+            \_ ->
+              run
+                """
+                puts({}, {1: 2}, {true: 1, false: 0})
+                """
+                |> Expect.equal
+                    ( Ok (Value VNull)
+                    , [ "{}"
+                      , "{1: 2}"
+                      , "{true: 1, false: 0}"
+                      ]
+                    )
+
+        , test "example 5" <|
+            \_ ->
+              run
+                """
+                puts();
+                puts(1);
+                puts(2, 3)
+                """
+                |> Expect.equal
+                    ( Ok (Value VNull)
+                    , [ "1"
+                      , "2"
+                      , "3"
+                      ]
+                    )
+        ]
     ]
 
 
@@ -723,5 +794,9 @@ makeTest : Int -> String -> Result Error Answer -> Test
 makeTest n input expected =
   test ("example " ++ String.fromInt n) <|
     \_ ->
-      run input
+      runForResult input
         |> Expect.equal expected
+
+
+runForResult : String -> Result Error Answer
+runForResult = run >> Tuple.first

@@ -9,6 +9,7 @@ import Array exposing (Array)
 import Monkey.Environment as Env
 import Monkey.Eval as Eval
 import Monkey.Hash as Hash exposing (Hash)
+import Monkey.Output as Output exposing (Output)
 import Monkey.Parser as P
 
 
@@ -67,17 +68,20 @@ type RuntimeError
 type alias Eval err a = Eval.Eval Env err a
 
 
-run : String -> Result Error Answer
+run : String -> (Result Error Answer, List String)
 run input =
   case P.parse input of
     Ok program ->
       evalProgram program
         |> Eval.run builtInFunctions
-        |> Result.map Tuple.second
-        |> Result.mapError RuntimeError
+        |> Tuple.mapFirst (Result.map Tuple.second)
+        |> Tuple.mapFirst (Result.mapError RuntimeError)
+        |> Tuple.mapSecond Output.toList
 
     Err err ->
-      Err (SyntaxError err)
+      ( Err (SyntaxError err)
+      , []
+      )
 
 
 evalProgram : P.Program -> Eval RuntimeError Answer
@@ -601,6 +605,7 @@ builtInFunctions =
   , ("last", builtInLast)
   , ("rest", builtInRest)
   , ("push", builtInPush)
+  , ("puts", builtInPuts)
   ]
   |> List.map (Tuple.mapSecond VBuiltInFunction)
   |> Env.fromList
@@ -683,3 +688,18 @@ builtInPush args =
 
     _ ->
       Eval.fail <| ArgumentError 2 (List.length args)
+
+
+builtInPuts : BuiltInFunction
+builtInPuts args =
+  case args of
+    [] ->
+      Eval.succeed VNull
+
+    (arg :: restArgs) ->
+      printValue arg
+        |> Eval.followedBy (builtInPuts restArgs)
+
+
+printValue : Value -> Eval RuntimeError ()
+printValue = Eval.print valueToString

@@ -3,75 +3,88 @@ module Monkey.Eval exposing
   , run
   , succeed, fail
   , getState, replaceState
+  , print
   , map
   , andThen, andThen2, followedBy
   )
 
 
+import Monkey.Output as Output exposing (Output)
+
+
 type Eval state err a
-  = Eval (state -> Step state err a)
+  = Eval ((state, Output) -> Step state err a)
 
 
 type Step state err a
-  = Good state a
-  | Bad err
+  = Good state Output a
+  | Bad Output err
 
 
-run : state -> Eval state err a -> Result err (state, a)
+run : state -> Eval state err a -> (Result err (state, a), Output)
 run s0 (Eval st) =
-  case st s0 of
-    Good s1 a ->
-      Ok (s1, a)
+  case st (s0, Output.empty) of
+    Good s1 output a ->
+      ( Ok (s1, a)
+      , output
+      )
 
-    Bad err ->
-      Err err
+    Bad output err ->
+      ( Err err
+      , output
+      )
 
 
 succeed : a -> Eval state err a
 succeed a =
-  Eval (\s -> Good s a)
+  Eval (\(s, o) -> Good s o a)
 
 
 fail : err -> Eval state err a
 fail err =
-  Eval (\_ -> Bad err)
+  Eval (\(_, o) -> Bad o err)
 
 
 getState : Eval state err state
 getState =
-  Eval (\s -> Good s s)
+  Eval (\(s, o) -> Good s o s)
 
 
 replaceState : state -> Eval state err ()
 replaceState s =
-  Eval (\_ -> Good s ())
+  Eval (\(_, o) -> Good s o ())
+
+
+print : (a -> String) -> a -> Eval state err ()
+print toString a =
+  Eval (\(s, o) -> Good s (Output.print toString a o) ())
 
 
 map : (a -> b) -> Eval state err a -> Eval state err b
 map f (Eval st) =
   Eval
-    (\s0 ->
-      case st s0 of
-        Good s1 a ->
-          Good s1 (f a)
+    (\(s0, o0) ->
+      case st (s0, o0) of
+        Good s1 o1 a ->
+          Good s1 o1 (f a)
 
-        Bad err ->
-          Bad err
+        Bad o1 err ->
+          Bad o1 err
     )
 
 
 andThen : (a -> Eval state err b) -> Eval state err a -> Eval state err b
 andThen f (Eval st0) =
   Eval
-    (\s0 ->
-      case st0 s0 of
-        Good s1 a ->
+    (\(s0, o0) ->
+      case st0 (s0, o0) of
+        Good s1 o1 a ->
           case f a of
             Eval st1 ->
-              st1 s1
+              st1 (s1, o1)
 
-        Bad err ->
-          Bad err
+        Bad o1 err ->
+          Bad o1 err
     )
 
 
