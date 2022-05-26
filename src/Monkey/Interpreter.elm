@@ -15,6 +15,7 @@ import Monkey.Parser as P
 
 type Answer
   = Void
+  | Return Value
   | Value Value
 
 
@@ -27,6 +28,7 @@ type Value
   | VHash (Hash Value)
   | VFunction Closure
   | VBuiltInFunction BuiltInFunction
+  | VReturn Value
 
 
 type alias Closure =
@@ -50,6 +52,7 @@ type Type
   | TArray
   | THash
   | TFunction
+  | TReturn Type
 
 
 type Error
@@ -87,6 +90,15 @@ run input =
 evalProgram : P.Program -> Eval RuntimeError Answer
 evalProgram (P.Program stmts) =
   evalStmts stmts
+    |> Eval.map
+        (\answer ->
+          case answer of
+            Return value ->
+              Value value
+
+            _ ->
+              answer
+        )
 
 
 evalStmts : List P.Stmt -> Eval RuntimeError Answer
@@ -100,7 +112,15 @@ evalStmts stmts =
 
     stmt :: restStmts ->
       evalStmt stmt
-        |> Eval.followedBy (evalStmts restStmts)
+        |> Eval.andThen
+            (\answer ->
+                case answer of
+                  Return _ ->
+                    Eval.succeed answer
+
+                  _ ->
+                    evalStmts restStmts
+            )
 
 
 evalStmt : P.Stmt -> Eval RuntimeError Answer
@@ -124,12 +144,29 @@ evalStmt stmt =
                     |> Eval.followedBy (Eval.succeed Void)
                 )
 
-    P.Return _ ->
-      Eval.fail NotImplemented
+    P.Return expr ->
+      evalExpr expr
+        |> Eval.map
+            (\value ->
+              case value of
+                VReturn v ->
+                  Return v
+
+                _ ->
+                  Return value
+            )
 
     P.ExprStmt expr ->
       evalExpr expr
-        |> Eval.map Value
+        |> Eval.map
+            (\value ->
+              case value of
+                VReturn v ->
+                  Return v
+
+                _ ->
+                  Value value
+            )
 
 
 evalExpr : P.Expr -> Eval RuntimeError Value
@@ -211,7 +248,7 @@ evalExprs exprs =
         |> Eval.andThen
             (\value ->
                 evalExprs restExprs
-                  |> Eval.map ((::) value)
+                  |> Eval.map ((::) (toNonReturnValue value))
             )
 
 evalKVExprs : List (P.Expr, P.Expr) -> Eval RuntimeError (List (Hash.Key, Value))
@@ -231,7 +268,7 @@ evalKVExprs kvExprs =
                             |> Eval.andThen
                                 (\value ->
                                     evalKVExprs restKVExprs
-                                      |> Eval.map ((::) (key, value))
+                                      |> Eval.map ((::) (key, toNonReturnValue value))
                                 )
                       )
             )
@@ -242,18 +279,24 @@ evalBlock block =
   evalStmts block
     |> Eval.andThen
         (\answer ->
-            Eval.succeed <|
-              case answer of
-                Void ->
-                  VNull
+            case answer of
+              Void ->
+                Eval.succeed VNull
 
-                Value value ->
-                  value
+              Return value ->
+                Eval.succeed (VReturn value)
+
+              Value value ->
+                Eval.succeed value
         )
 
 
 evalPrefix : P.UnaryOp -> Value -> Eval RuntimeError Value
-evalPrefix op value =
+evalPrefix op v =
+  let
+    value =
+      toNonReturnValue v
+  in
   case op of
     P.Not ->
       computeNot value
@@ -286,7 +329,14 @@ computeNegate value =
 
 
 evalInfix : P.BinOp -> Value -> Value -> Eval RuntimeError Value
-evalInfix op valueA valueB =
+evalInfix op vA vB =
+  let
+    valueA =
+      toNonReturnValue vA
+
+    valueB =
+      toNonReturnValue vB
+  in
   case op of
     P.Equal ->
       computeEqual valueA valueB
@@ -409,7 +459,11 @@ computeDiv valueA valueB =
 
 
 evalCall : Value -> List Value -> Eval RuntimeError Value
-evalCall value args =
+evalCall v args =
+  let
+    value =
+      toNonReturnValue v
+  in
   case value of
     VFunction closure ->
       applyClosure closure args
@@ -477,7 +531,11 @@ evalIndex valueA valueB =
 
 
 expectInt : Value -> Eval RuntimeError Int
-expectInt value =
+expectInt v =
+  let
+    value =
+      toNonReturnValue v
+  in
   case value of
     VNum n ->
       Eval.succeed n
@@ -487,7 +545,11 @@ expectInt value =
 
 
 expectKey : Value -> Eval RuntimeError Hash.Key
-expectKey value =
+expectKey v =
+  let
+    value =
+      toNonReturnValue v
+  in
   case value of
     VNum n ->
       Eval.succeed <| Hash.KNum n
@@ -503,7 +565,11 @@ expectKey value =
 
 
 isTruthy : Value -> Bool
-isTruthy value =
+isTruthy v =
+  let
+    value =
+      toNonReturnValue v
+  in
   case value of
     VNull ->
       False
@@ -513,6 +579,16 @@ isTruthy value =
 
     _ ->
       True
+
+
+toNonReturnValue : Value -> Value
+toNonReturnValue value =
+  case value of
+    VReturn v ->
+      toNonReturnValue v
+
+    _ ->
+      value
 
 
 typeOf : Value -> Type
@@ -542,12 +618,18 @@ typeOf value =
     VBuiltInFunction _ ->
       TFunction
 
+    VReturn v ->
+      TReturn (typeOf v)
+
 
 answerToString : Answer -> String
 answerToString answer =
   case answer of
     Void ->
       ""
+
+    Return value ->
+      valueToString value
 
     Value value ->
       valueToString value
@@ -596,6 +678,9 @@ valueToString value =
 
     VBuiltInFunction _ ->
       "<built-in function>"
+
+    VReturn v ->
+      "return " ++ valueToString v
 
 
 builtInFunctions : Env

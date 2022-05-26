@@ -14,6 +14,7 @@ suite =
   describe "Interpreter"
     [ emptyProgramSuite
     , letSuite
+    , returnSuite
     , literalsSuite
     , arraysSuite
     , hashSuite
@@ -58,6 +59,78 @@ letSuite =
     , makeBadExamples
         [ ("let a = a; a", IdentifierNotFound "a")
         , ("foobar", IdentifierNotFound "foobar")
+        ]
+    ]
+
+
+returnSuite : Test
+returnSuite =
+  describe "return" <|
+    [ makeGoodExamples
+        [ ("return 10;", VNum 10)
+        , ("return 10; 9", VNum 10)
+        , ("return 2 * 5; 9", VNum 10)
+        , ("9; return 2 * 5; 9", VNum 10)
+
+        , ( """
+            if (10 > 1) {
+              if (10 > 1) {
+                return 10;
+              }
+
+              return 1;
+            }
+            """
+          , VNum 10
+          )
+
+        , ("return if (true) { return 10; };", VNum 10)
+        , ("return if (true) { return if (true) { return 10; }; };", VNum 10)
+        , ("return if (true) { return if (false) { return 10; }; };", VNull)
+
+        , ( "[1, if (true) { return 2; }, 3]"
+          , VArray <| Array.fromList
+              [ VNum 1
+              , VNum 2
+              , VNum 3
+              ]
+          )
+        , ("[1][if (true) { return 0; }]", VNum 1)
+
+        , ( """
+            { if (true) { return "one"; }: if (true) { return 1; }
+            }
+            """
+          , VHash <| Hash.fromList
+              [ (Hash.KString "one", VNum 1)
+              ]
+          )
+        , ("{true:1}[if (true) { return true; }]", VNum 1)
+
+        , ("!(if (true) { return false; })", VBool True)
+        , ("-(if (true) { return 1; })", VNum -1)
+
+        , ("(if (true) { return fn(x){x+1}; })(1)", VNum 2)
+        , ("(fn(x){x+1})(if (true) { return 1; })", VNum 2)
+        , ("(if (true) { return fn(x){x+1}; })(if (true) { return 1; })", VNum 2)
+
+        , ( """
+            let f = fn (n) {
+              if (n == 1) {
+                return n;
+              } else {
+                if (n == 2) {
+                  let m = n * n;
+                  return m;
+                } else {
+                  return 5 * n;
+                }
+              }
+            };
+            f(1) + f(2) + f(3)
+            """
+          , VNum 20
+          )
         ]
     ]
 
