@@ -2,7 +2,7 @@ module Monkey.Eval exposing
   ( Eval
   , run
   , succeed, fail
-  , getState, replaceState
+  , getState, replaceState, withState
   , print
   , map
   , andThen, andThen2, followedBy
@@ -53,6 +53,32 @@ getState =
 replaceState : state -> Eval state err ()
 replaceState s =
   Eval (\(_, o) -> Good s o ())
+
+
+withState : state -> Eval state err a -> Eval state err a
+withState newState (Eval st) =
+  Eval
+    (\(oldState, o0) ->
+      case st (newState, o0) of
+        Good _ o1 a ->
+          Good oldState o1 a
+
+        Bad o1 err ->
+          Bad o1 err
+    )
+  -- Alternatively, we can implement it as follows:
+  --
+  -- getState
+  --   |> andThen
+  --       (\oldState ->
+  --           replaceState newState
+  --             |> followedBy eval
+  --             |> andThen
+  --                 (\value ->
+  --                     replaceState oldState
+  --                       |> followedBy (succeed value)
+  --                 )
+  --       )
 
 
 print : (a -> String) -> a -> Eval state err ()

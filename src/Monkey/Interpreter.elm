@@ -485,9 +485,9 @@ applyClosure { params, body, savedEnv } args =
       List.length args
   in
   if numParams == numArgs then
-    Env.extendMany (zip params args []) savedEnv
-      |> Eval.replaceState
-      |> Eval.followedBy (evalBlock body)
+    evalBlock body
+      |> Eval.withState (Env.extendMany (zip params args []) savedEnv)
+
   else
     Eval.fail <| ArgumentError numParams numArgs
 

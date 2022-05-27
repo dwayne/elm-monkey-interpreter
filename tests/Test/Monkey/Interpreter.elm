@@ -23,6 +23,7 @@ suite =
     , infixSuite
     , ifSuite
     , functionSuite
+    , fibonacciSuite
     , builtInFunctionsSuite
     , miscSuite
     , answerToStringSuite
@@ -639,6 +640,20 @@ functionSuite =
                 """
               , VNum 55
               )
+
+            , ( """
+                let sum = fn(n) {
+                  if (n == 0) {
+                    0
+                  } else {
+                    sum(n - 1) + n
+                  }
+                };
+                sum(1)
+                """
+              , VNum 1
+              )
+
             , ( """
                 let factorial = fn(n) {
                   if (n == 0) {
@@ -651,28 +666,20 @@ functionSuite =
                 """
               , VNum 120
               )
-            -- FIXME: This doesn't work as expected.
-            --
-            -- I get the following error:
-            --
-            --   RangeError: Maximum call stack size exceeded
-            --
-            -- , ( """
-            --     let fib = fn(n) {
-            --       if (n == 0) {
-            --         1
-            --       } else {
-            --         if (n == 1) {
-            --           1
-            --         } else {
-            --           fib(n - 1) + fib(n - 2)
-            --         }
-            --       }
-            --     };
-            --     fib(10)
-            --     """
-            --   , VNum 89
-            --   )
+
+
+            , ( """
+                let factorial = fn(n) {
+                  if (n == 0) {
+                    1
+                  } else {
+                    factorial(n - 1) * n
+                  }
+                };
+                factorial(5)
+                """
+              , VNum 120
+              )
 
             -- mutual recursion
             , ( """
@@ -697,6 +704,37 @@ functionSuite =
               , VBool True
               )
             ]
+        ]
+    ]
+
+
+fibonacciSuite : Test
+fibonacciSuite =
+  let
+    fib =
+      """
+      let fib = fn(n) {
+        if (n == 0) {
+          1
+        } else {
+          if (n == 1) {
+            1
+          } else {
+            fib(n - 1) + fib(n - 2)
+          }
+        }
+      };
+      """
+  in
+  describe "fibonacci"
+    [ makeGoodExamples
+        [ (fib ++ "fib(0)", VNum 1)
+        , (fib ++ "fib(1)", VNum 1)
+        , (fib ++ "fib(2)", VNum 2)
+        , (fib ++ "fib(3)", VNum 3)
+        , (fib ++ "fib(4)", VNum 5)
+        , (fib ++ "fib(5)", VNum 8)
+        , (fib ++ "fib(10)", VNum 89)
         ]
     ]
 
