@@ -16,6 +16,7 @@ suite =
     , letSuite
     , returnSuite
     , literalsSuite
+    , stringsSuite
     , arraysSuite
     , hashSuite
     , prefixSuite
@@ -23,6 +24,7 @@ suite =
     , ifSuite
     , functionSuite
     , builtInFunctionsSuite
+    , miscSuite
     , answerToStringSuite
     ]
 
@@ -47,12 +49,43 @@ letSuite =
   describe "let" <|
     [ makeGoodExamples
         [ ("let a = 5; a", VNum 5)
+        , ("let a = 5 * 5; a;", VNum 25)
+        , ("let a = 5; let b = a; b;", VNum 5)
+        , ("let a = 5; let b = a; let c = a + b + 5; c;", VNum 15)
+
         , ("let b = false; b", VBool False)
         , ( """
             let c = "hello";
             c
             """
           , VString "hello"
+          )
+
+        , ( """
+            let a = 5;
+            let b = a > 3;
+            let c = a * 99;
+            if (b) { 10 } else { 1 };
+            """
+          , VNum 10
+          )
+        , ( """
+            let a = 5;
+            let b = a > 3;
+            let c = a * 99;
+            let d = if (c > a) { 99 } else { 100 };
+            d
+            """
+          , VNum 99
+          )
+        , ( """
+            let a = 5;
+            let b = a > 3;
+            let c = a * 99;
+            let d = if (c > a) { 99 } else { 100 };
+            d * c * a;
+            """
+          , VNum 245025
           )
         ]
 
@@ -115,6 +148,16 @@ returnSuite =
         , ("(if (true) { return fn(x){x+1}; })(if (true) { return 1; })", VNum 2)
 
         , ( """
+            let f = fn (x) {
+              if (x == 0) { return x + 1; }
+              x
+            };
+            f(0) + f(2)
+            """
+          , VNum 3
+          )
+
+        , ( """
             let f = fn (n) {
               if (n == 1) {
                 return n;
@@ -146,6 +189,57 @@ literalsSuite =
             "Hello, world!"
             """
           , VString "Hello, world!"
+          )
+        ]
+    ]
+
+
+stringsSuite : Test
+stringsSuite =
+  describe "strings"
+    [ makeGoodExamples
+        [ ( """
+            let firstName = "Thorsten";
+            let lastName = "Ball";
+            let fullName = fn(first, last) { first + " " + last };
+            fullName(firstName, lastName);
+            """
+          , VString "Thorsten Ball"
+          )
+        , ( "\"Hello world!\""
+          , VString "Hello world!"
+          )
+        , ( """
+            let hello = "Hello there, fellow Monkey users and fans!";
+            hello
+            """
+          , VString "Hello there, fellow Monkey users and fans!"
+          )
+        , ( """
+            let giveMeHello = fn() { "Hello!" };
+            giveMeHello()
+            """
+          , VString "Hello!"
+          )
+        , ( """
+            let makeGreeter = fn(greeting) { fn(name) { greeting + " " + name + "!" } };
+            let hello = makeGreeter("Hello");
+            hello("Thorsten");
+            """
+          , VString "Hello Thorsten!"
+          )
+        , ( """
+            let makeGreeter = fn(greeting) { fn(name) { greeting + " " + name + "!" } };
+            let heythere = makeGreeter("Hey there");
+            heythere("Thorsten");
+            """
+          , VString "Hey there Thorsten!"
+          )
+        ]
+
+    , makeBadExamples
+        [ ( "\"Hello\" - \"World\";"
+          , UnknownOperation "-" [TString, TString]
           )
         ]
     ]
@@ -579,6 +673,29 @@ functionSuite =
             --     """
             --   , VNum 89
             --   )
+
+            -- mutual recursion
+            , ( """
+                let even = fn (n) {
+                  if (n == 0) {
+                    true
+                  } else {
+                    odd(n - 1)
+                  }
+                };
+
+                let odd = fn (n) {
+                  if (n == 0) {
+                    false
+                  } else {
+                    even(n - 1)
+                  }
+                };
+
+                even(2)
+                """
+              , VBool True
+              )
             ]
         ]
     ]
@@ -747,6 +864,83 @@ builtInFunctionsSuite =
                       , "3"
                       ]
                     )
+        ]
+    ]
+
+
+miscSuite : Test
+miscSuite =
+  describe "miscellaneous"
+    [ makeGoodExamples
+        [ ( """
+            let people = [{"name": "Alice", "age": 24}, {"name": "Anna", "age": 28}];
+            people[0]["name"];
+            """
+          , VString "Alice"
+          )
+        , ( """
+            let people = [{"name": "Alice", "age": 24}, {"name": "Anna", "age": 28}];
+            people[1]["age"];
+            """
+          , VNum 28
+          )
+        , ( """
+            let people = [{"name": "Alice", "age": 24}, {"name": "Anna", "age": 28}];
+            people[1]["age"] + people[0]["age"];
+            """
+          , VNum 52
+          )
+        , ( """
+            let people = [{"name": "Alice", "age": 24}, {"name": "Anna", "age": 28}];
+            let getName = fn(person) { person["name"]; };
+            getName(people[0]);
+            """
+          , VString "Alice"
+          )
+        , ( """
+            let people = [{"name": "Alice", "age": 24}, {"name": "Anna", "age": 28}];
+            let getName = fn(person) { person["name"]; };
+            getName(people[1]);
+            """
+          , VString "Anna"
+          )
+
+        , ( """
+            let map = fn(arr, f) {
+              let iter = fn(arr, accumulated) {
+                if (len(arr) == 0) {
+                  accumulated
+                } else {
+                  iter(rest(arr), push(accumulated, f(first(arr))));
+                }
+              };
+              iter(arr, []);
+            };
+            let a = [1, 2, 3, 4];
+            let double = fn(x) { x * 2 };
+            map(a, double);
+            """
+          , VArray <| Array.fromList [VNum 2, VNum 4, VNum 6, VNum 8]
+          )
+
+        , ( """
+            let reduce = fn(arr, initial, f) {
+              let iter = fn(arr, result) {
+                if (len(arr) == 0) {
+                  result
+                } else {
+                  iter(rest(arr), f(result, first(arr)));
+                }
+              };
+              iter(arr, initial);
+            };
+            let sum = fn(arr) {
+              reduce(arr, 0, fn(initial, el) { initial + el });
+            };
+            sum([1, 2, 3, 4, 5]);
+            """
+          , VNum 15
+          )
         ]
     ]
 
