@@ -506,7 +506,14 @@ zip xs ys revList =
 
 
 evalIndex : Value -> Value -> Eval RuntimeError Value
-evalIndex valueA valueB =
+evalIndex vA vB =
+  let
+    valueA =
+      toNonReturnValue vA
+
+    valueB =
+      toNonReturnValue vB
+  in
   case valueA of
     VArray array ->
       expectInt valueB

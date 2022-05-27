@@ -175,6 +175,8 @@ returnSuite =
             """
           , VNum 20
           )
+
+        , ("[fn (x) { return [x]; }][0](4)[0]", VNum 4)
         ]
     ]
 
