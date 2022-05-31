@@ -3,6 +3,7 @@ module Main exposing (main)
 
 import Browser as B
 import Html as H
+import Html.Attributes as HA
 
 
 main : Program () Model Msg
@@ -44,4 +45,19 @@ update msg model =
 
 view : Model -> H.Html msg
 view _ =
-  H.text "Hello, world!"
+  H.div []
+    [ H.p []
+        [ H.button
+            []
+            [ H.text "Run" ]
+        ]
+    , H.p []
+        [ H.textarea
+            [ HA.cols 80
+            , HA.rows 20
+            , HA.placeholder "Enter your Monkey program here."
+            , HA.autofocus True
+            ]
+            []
+        ]
+    ]
