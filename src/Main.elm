@@ -193,11 +193,17 @@ pluralize n singular plural =
 view : Model -> H.Html Msg
 view { sourceCode, logs } =
   H.div []
-    [ H.p []
-        [ H.button
-            [ HE.onClick ClickedRun
-            ]
-            [ H.text "Run" ]
+    [ H.h1 [] [ H.text "A Monkey Interpreter" ]
+    , H.p []
+        [ H.text "... written in "
+        , H.a
+            [ HA.href "https://elm-lang.org/" ]
+            [ H.text "Elm" ]
+        , H.text ". It is based on the interpreter described in the book "
+        , H.a
+            [ HA.href "https://interpreterbook.com/" ]
+            [ H.text "Writing an Interpreter in Go" ]
+        , H.text "."
         ]
     , H.p []
         [ H.textarea
@@ -208,6 +214,12 @@ view { sourceCode, logs } =
             , HE.onInput EnteredSourceCode
             ]
             [ H.text sourceCode ]
+        ]
+    , H.p []
+        [ H.button
+            [ HE.onClick ClickedRun
+            ]
+            [ H.text "Run" ]
         ]
     , H.h2 [] [ H.text "Output" ]
     , if List.isEmpty logs then
