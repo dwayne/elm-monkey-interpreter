@@ -65,7 +65,6 @@ type RuntimeError
   | TypeError (List Type) Type
   | UnknownOperation String (List Type)
   | ZeroDivisionError
-  | NotImplemented
 
 
 type alias Eval err a = Eval.Eval Env err a
