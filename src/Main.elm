@@ -43,7 +43,8 @@ init =
 
 
 type Msg
-  = EnteredSourceCode String
+  = SelectedAnExampleProgram String
+  | EnteredSourceCode String
   | ClickedRun
 
 
@@ -69,6 +70,41 @@ update msg model =
           { model
           | logs = appendErrorToLogs error logs
           }
+
+    SelectedAnExampleProgram value ->
+      case value of
+        "" ->
+          { model | sourceCode = "" }
+
+        "hello" ->
+          { model | sourceCode = examplePrograms.hello }
+
+        "count" ->
+          { model | sourceCode = examplePrograms.count }
+
+        "gcd" ->
+          { model | sourceCode = examplePrograms.gcd }
+
+        "factorial" ->
+          { model | sourceCode = examplePrograms.factorial }
+
+        "fibonacci" ->
+          { model | sourceCode = examplePrograms.fibonacci }
+
+        "map" ->
+          { model | sourceCode = examplePrograms.map }
+
+        "reduce" ->
+          { model | sourceCode = examplePrograms.reduce }
+
+        "filter" ->
+          { model | sourceCode = examplePrograms.filter }
+
+        "hashes" ->
+          { model | sourceCode = examplePrograms.hashes }
+
+        _ ->
+          model
 
 
 appendAnswerToLogs : I.Answer -> List Log -> List Log
@@ -206,14 +242,33 @@ view { sourceCode, logs } =
         , H.text "."
         ]
     , H.p []
+        [ H.select
+            [ HE.onInput SelectedAnExampleProgram
+            ]
+            [ H.option
+                [ HA.value "" ]
+                [ H.text "Please choose an example program..." ]
+            , H.option [ HA.value "hello" ] [ H.text "hello" ]
+            , H.option [ HA.value "count" ] [ H.text "count" ]
+            , H.option [ HA.value "gcd" ] [ H.text "gcd" ]
+            , H.option [ HA.value "factorial" ] [ H.text "factorial" ]
+            , H.option [ HA.value "fibonacci" ] [ H.text "fibonacci" ]
+            , H.option [ HA.value "map" ] [ H.text "map" ]
+            , H.option [ HA.value "reduce" ] [ H.text "reduce" ]
+            , H.option [ HA.value "filter" ] [ H.text "filter" ]
+            , H.option [ HA.value "hashes" ] [ H.text "hashes" ]
+            ]
+        ]
+    , H.p []
         [ H.textarea
             [ HA.cols 80
-            , HA.rows 20
-            , HA.placeholder "Enter your Monkey program here."
+            , HA.rows 25
+            , HA.placeholder "... or write your own Monkey program."
             , HA.autofocus True
+            , HA.value sourceCode
             , HE.onInput EnteredSourceCode
             ]
-            [ H.text sourceCode ]
+            []
         ]
     , H.p []
         [ H.button
@@ -248,3 +303,19 @@ viewLog log =
       H.div
         [ HA.style "color" "red" ]
         [ H.text s ]
+
+
+-- EXAMPLE PROGRAMS
+
+
+examplePrograms =
+  { hello = "\"Hello, world!\""
+  , count = "let count = fn (n) {\n  if (n < 11) {\n    puts(n);\n    count(n + 1)\n  }\n};\ncount(1)"
+  , gcd = "let mod = fn (a, b) {\n  a - a / b * b\n};\nlet gcd = fn (a, b) {  \n  if (b == 0) {\n    a\n  } else {\n    gcd(b, mod(a, b))\n  }\n};\ngcd(18, 12)"
+  , factorial = "let fact = fn (n) {\n  if (n == 0) {\n    1\n  } else {\n    n * fact(n - 1)\n  }\n};\nfact(10)"
+  , fibonacci = "let fib = fn (n) {\n  if (n == 0) {\n    0\n  } else {\n    if (n == 1) {\n      1\n    } else {\n      fib(n - 1) + fib(n - 2)\n    }\n  }\n};\nfib(20)"
+  , map = "let map = fn(f, arr) {\n  let iter = fn(arr, accumulated) {\n    if (len(arr) == 0) {\n      accumulated\n    } else {\n      iter(rest(arr), push(accumulated, f(first(arr))))\n    }\n  };\n  iter(arr, [])\n};\nlet sqr = fn(x) { x * x };\nlet a = [1, 2, 3, 4, 5];\nmap(sqr, a)"
+  , reduce = "let reduce = fn (f, default, arr) {\n  let iter = fn (arr, accumulated) {\n    if (len(arr) == 0) {\n      accumulated\n    } else {\n      iter(rest(arr), f(accumulated, first(arr)))\n    }\n  };\n  iter(arr, default)\n};\nlet add = fn (a, b) { a + b };\nlet sum = fn (arr) { reduce(add, 0, arr) };\nsum([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])"
+  , filter = "let filter = fn (pred, arr) {\n  let iter = fn (arr, accumulated) {\n    if (len(arr) == 0) {\n      accumulated\n    } else {\n      if (pred(first(arr))) {\n        iter(rest(arr), push(accumulated, first(arr)))\n      } else {\n        iter(rest(arr), accumulated)\n      }\n    }\n  };\n  iter(arr, [])\n};\nlet mod = fn (a, b) {\n  a - a / b * b\n};\nlet isEven = fn (n) {\n  mod(n, 2) == 0\n};\nfilter(isEven, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])"
+  , hashes = "let fruits = [\n  {\"name\": \"apple\", \"calories\": 104},\n  {\"name\": \"banana\", \"calories\": 105}\n];\n\nlet getName = fn (fruit) { fruit[\"name\"] };\n\nputs(\n  getName(fruits[0]),\n  getName(fruits[1])\n)"
+  }
