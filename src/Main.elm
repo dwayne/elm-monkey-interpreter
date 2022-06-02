@@ -231,15 +231,18 @@ view { sourceCode, logs } =
   H.div []
     [ H.h1 [] [ H.text "A Monkey Interpreter" ]
     , H.p []
-        [ H.text "... written in "
+        [ H.text "It is written in "
         , H.a
             [ HA.href "https://elm-lang.org/" ]
             [ H.text "Elm" ]
-        , H.text ". It is based on the interpreter described in the book "
+        , H.text " and is based on the interpreter described in the book "
         , H.a
             [ HA.href "https://interpreterbook.com/" ]
             [ H.text "Writing an Interpreter in Go" ]
         , H.text "."
+        ]
+    , H.p []
+        [ H.text "Enjoy!"
         ]
     , H.p []
         [ H.select
@@ -261,10 +264,12 @@ view { sourceCode, logs } =
         ]
     , H.p []
         [ H.textarea
-            [ HA.cols 80
+            [ HA.class "sourceCode"
+            , HA.cols 80
             , HA.rows 25
             , HA.placeholder "... or write your own Monkey program."
             , HA.autofocus True
+            , HA.spellcheck False
             , HA.value sourceCode
             , HE.onInput EnteredSourceCode
             ]
