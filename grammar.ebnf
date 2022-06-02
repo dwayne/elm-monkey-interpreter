@@ -1,4 +1,4 @@
-/* A context-free grammar for the monkey programming language.
+/* A context-free grammar for the Monkey programming language.
  *
  * Go to https://www.bottlecaps.de/rr/ui to view a syntax diagram of the
  * grammar.
