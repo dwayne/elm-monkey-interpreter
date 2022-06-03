@@ -1,1 +1,29 @@
-Hello, world!
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>A Monkey Interpreter</title>
+    <style>
+      body {
+        font-size: 1em;
+      }
+
+      .sourceCode {
+        padding: 10px;
+        line-height: 1.5;
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="/app.js"></script>
+    <script>
+      Elm.Main.init({
+        node: document.getElementById('app')
+      });
+    </script>
+  </body>
+</html>
