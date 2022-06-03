@@ -2,11 +2,14 @@
   "private": true,
   "scripts": {
     "build": "elm make src/Main.elm --debug --output=public/app.js",
-    "serve": "serve --single --debug public"
+    "build:prod": "./scripts/build-prod.sh src/Main.elm",
+    "serve": "serve --single --debug public",
+    "deploy": "./scripts/deploy.sh"
   },
   "dependencies": {
     "elm": "^0.19.1-5",
     "elm-test": "^0.19.1-revision7",
-    "serve": "^13.0.2"
+    "serve": "^13.0.2",
+    "uglify-js": "^3.15.5"
   }
 }
