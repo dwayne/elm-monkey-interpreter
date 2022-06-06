@@ -58,7 +58,8 @@ TL;DR
 - Write context-free grammars for your syntax.
 - Separate lexical and syntax analysis.
 - Use lexeme parsers.
-- ...
+- Your context-free grammar will help you figure out how to write your parsers.
+- `binary`, `binaryLeftAssoc`, `many`, and `optional` are handy parsers.
 
 ### Context-Free Grammar
 
@@ -109,7 +110,19 @@ Parsec has this concept of lexeme parsers. You get them when you use the
 
 [Parser.elm](src/Monkey/Parser.elm)
 
-WIP
+It was a nice exercise to figure out a parser for the `Operator` production.
+
+```
+Operator ::= Operator ( Call | Index ) | Primary
+```
+
+To get the `binary` parser I implemented specific solutions for the `Equality`
+and `Comparison` productions and then extracted a general solution. I went
+through a similar process to derive the `binaryLeftAssoc` parser.
+
+Instead of using the `loop` parser directly I built `many` out of it.
+
+The `optional` parser came in handy as well.
 
 ### Evaluation
 
