@@ -268,11 +268,11 @@ view { sourceCode, logs } =
             , H.a
                 [ HA.href "https://github.com/dwayne/elm-monkey-interpreter/blob/master/src/Monkey/Interpreter.elm" ]
                 [ H.text "source code for the interpreter" ]
-            , H.text " to learn how it's implemented with a custom "
+            , H.text " to learn how it's implemented with an "
             , H.a
                 [ HA.href "https://github.com/dwayne/elm-monkey-interpreter/blob/master/src/Monkey/Eval.elm" ]
                 [ H.text "Eval" ]
-            , H.text " monad."
+            , H.text " abstract data type."
             ]
         ]
     , H.p []
